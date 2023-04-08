@@ -54,13 +54,14 @@ class System:
         with open(self.columns_filepath,'r') as f:
             f.readline()
             for line_2 in f.readlines():
-                line = line.strip("\n")
-                line = line.split(",")
-                if line[0] in self.table_attributes:
+                line_2 = line_2.strip("\n")
+                line_2 = line_2.split(",")
+                
+                if line_2[0] in self.table_attributes:
 
-                    self.table_attributes[line[0]].append(line[1:])
+                    self.table_attributes[line_2[0]].append(line_2[1:])
                 else:
-                    self.table_attributes[line[0]] = [line[1:]]
+                    self.table_attributes[line_2[0]] = [line_2[1:]]
 
         print(self.table_attributes)
         print(self.table_path)
@@ -245,14 +246,15 @@ class System:
 
 if __name__=='__main__':
     mySystem=System()
-    mySystem.Create_Database('CLASS')
+    # mySystem.Create_Database('CLASS')
     # # open database
     # # ATTRIBUTE=namedtuple('attribute',['name','data_type','offset','p_key'])
     # # A1=ATTRIBUTE(*['animal_name','STR',0,True])
     # # A2=ATTRIBUTE(*['animal_age','INT',1,False])
-    mySystem.Create_Table('name_age',[['name','String',True],['age','INT',False]])
-    # mySystem.open_database('CLASS')
-    # mySystem.Drop_Table('name_age')
+    # mySystem.Create_Table('name_age',[['name','String',True],['age','INT',False]])
+    mySystem.open_database('CLASS')
+    # mySystem.Create_Table('name_height',[['name','String',True],['height','INT',False]])
+    mySystem.Drop_Table('name_age')
     # mySystem.Drop_Database()
 
 
