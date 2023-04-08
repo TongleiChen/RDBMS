@@ -17,6 +17,7 @@ class System:
 
     
     def Create_Database(self,database_name):
+        # YUNI: 0408 Tested
         self.database_name = database_name
 
         if os.path.isdir('./' + self.database_name):
@@ -43,6 +44,7 @@ class System:
 
 
     def open_database(self,database_name):
+        # YUNI: 0408 Tested
         self.database_name = database_name
         self.tables_filepath = os.path.join(self.database_name,'TABLES.csv')
         self.columns_filepath = os.path.join(self.database_name,'COLUMNS.csv')
@@ -63,17 +65,17 @@ class System:
                 else:
                     self.table_attributes[line_2[0]] = [line_2[1:]]
 
-        print(self.table_attributes)
-        print(self.table_path)
+        # print(self.table_attributes)
+        # print(self.table_path)
         return
     def Drop_Database(self):
+        # YUNI: 0408 Tested
         if os.path.isdir('./' + self.database_name):
             # remove table
 
             shutil.rmtree('./' + self.database_name)
 
 
-            # YUNI: 能不能没有这个功能
 
             print(self.database_name," DROPPED SUCCESSFULLY. ")
 
@@ -83,7 +85,7 @@ class System:
 
 
     def Create_Table(self,relation_name:str,attribute_list:list):
-        
+        # YUNI: 0408 Tested
         current_table_path = os.path.join(self.database_name,relation_name+'.csv')
         if not os.path.exists(current_table_path):
             self.table_path[relation_name] = current_table_path
@@ -113,7 +115,7 @@ class System:
 
                 f_t.write(",".join(attr_name_list)+'\n')
 
-            self.table_attributes[relation_name] = attr_name_list[1:]
+            self.table_attributes[relation_name] = attribute_list
             print(relation_name, "CREATED SUCCESSFULLY ")
 
 
@@ -125,6 +127,7 @@ class System:
 
 
     def Drop_Table(self,relation_name):
+        # YUNI: 0408 Tested
         if relation_name in self.table_path:
 
             os.remove(self.table_path[relation_name])
@@ -170,20 +173,24 @@ class System:
 
 
     def insert_data(self,relation_name,data:dict):
+        # TODO: 
+        # Check duplicates
         current_table_path = self.table_path[relation_name]
         attribute_list = self.table_attributes[relation_name]
         data_list = []
         for attri in attribute_list:
-            data_list.append(data[attri])
+            print(attri)
+            data_list.append(data[attri[0]])
 
         
         with open(current_table_path,'r+') as f_t:
             f_t.seek(0,2)
-            f_t.write(",".join(data_list)+"\n")
+            f_t.write(",".join(map(str, data_list))+"\n")
 
         return
 
     def delete_data(self,relation_name,data_pos):
+        # YUNI: 0408 Tested
         # YUNI: 搞不懂我自己为什么不直接把整个table更新完丢进去. 征求lzx建议. update_data 也是
         current_table_path = self.table_path[relation_name]
         new_data = []
@@ -202,13 +209,14 @@ class System:
     
 
     def update_data(self,relation_name,data_pos,data:dict):
+        # TODO: Check duplicates
         current_table_path = self.table_path[relation_name]
         
         attribute_list = self.table_attributes[relation_name]
         data_list = []
         for attri in attribute_list:
-            data_list.append(data[attri])
-        updated_data = "".join(data_list) + '\n'
+            data_list.append(data[attri[0]])
+        updated_data = ",".join(map(str,data_list)) + '\n'
         new_data = []
         with open(current_table_path,"r") as f:
             for pos,data_line in enumerate(f.readlines()):
@@ -223,10 +231,13 @@ class System:
         return
     
     def get_data(self,relation_name):
+        # YUNI: 0408 Tested
         # YUNI: 不知道return 应该是list还是dict还是什么
         current_table_path = self.table_path[relation_name]
         data_in_table = []
-        data_attributes = self.table_attributes[relation_name]
+        data_attributes = []
+        for attr in self.table_attributes[relation_name]:
+            data_attributes.append(attr[0])
         with open(current_table_path,"r") as f:
             f.readline()
             for data_line in f.readlines():
@@ -251,10 +262,21 @@ if __name__=='__main__':
     # # ATTRIBUTE=namedtuple('attribute',['name','data_type','offset','p_key'])
     # # A1=ATTRIBUTE(*['animal_name','STR',0,True])
     # # A2=ATTRIBUTE(*['animal_age','INT',1,False])
-    # mySystem.Create_Table('name_age',[['name','String',True],['age','INT',False]])
+    
     mySystem.open_database('CLASS')
+    # mySystem.delete_data('name_age',0)
+    # mySystem.Create_Table('name_age',[['name','String',True],['age','INT',False]])
     # mySystem.Create_Table('name_height',[['name','String',True],['height','INT',False]])
-    mySystem.Drop_Table('name_age')
+    # data = {"name": "suzy","age":13}
+
+    # mySystem.insert_data('name_age',data)
+    # data['age'] = 14
+    # mySystem.update_data('name_age',1,data)
+    # data = {"name": "suzy","height":170}
+    # mySystem.insert_data('name_height',data)
+    print(mySystem.get_data('name_age'))
+    print(mySystem.get_data('name_height'))
+    # mySystem.Drop_Table('name_age') 
     # mySystem.Drop_Database()
 
 
