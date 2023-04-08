@@ -1,4 +1,5 @@
-# call after parser
+
+# logical operator
 def select(table_name,conditions):
     '''
     # TODO
