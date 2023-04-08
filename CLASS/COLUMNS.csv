@@ -1,0 +1,3 @@
+table_name, attribute_name, data_type, primary_key
+name_age,name,String,True
+name_age,age,INT,False

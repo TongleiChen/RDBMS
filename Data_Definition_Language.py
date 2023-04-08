@@ -9,9 +9,9 @@ class System:
     # Maintain two “tables”: TABLES & COLUMNS
     # the system can only contain one database
     def __init__(self) -> None:
-        self.database_name = ""
-        self.tables_filepath = ""
-        self.columns_filepath = ""
+        self.database_name = None
+        self.tables_filepath = None
+        self.columns_filepath = None
         self.table_path = {}
         self.table_attributes= {}
 
@@ -42,7 +42,29 @@ class System:
             print(self.database_name, "CREATED SUCCESSFULLY. ")
 
 
+    def open_database(self,database_name):
+        self.database_name = database_name
+        self.tables_filepath = os.path.join(self.database_name,'TABLES.csv')
+        self.columns_filepath = os.path.join(self.database_name,'COLUMNS.csv')
+        with open(self.tables_filepath,'r') as f:
+            f.readline()
+            for line in f.readlines():
+                line = line.strip("\n")
+                self.table_path[line] = os.path.join(self.database_name,line+'.csv')
+        with open(self.columns_filepath,'r') as f:
+            f.readline()
+            for line_2 in f.readlines():
+                line = line.strip("\n")
+                line = line.split(",")
+                if line[0] in self.table_attributes:
 
+                    self.table_attributes[line[0]].append(line[1:])
+                else:
+                    self.table_attributes[line[0]] = [line[1:]]
+
+        print(self.table_attributes)
+        print(self.table_path)
+        return
     def Drop_Database(self):
         if os.path.isdir('./' + self.database_name):
             # remove table
@@ -67,12 +89,12 @@ class System:
 
 
             # write relation name data to TABLES.csv
-            with open(self.tables_filepath,'w') as f:
+            with open(self.tables_filepath,'r+') as f:
                 f.seek(0, 2)
                 f.write(relation_name+'\n')
 
             # write attribute data to COLUMNS.csv
-            with open(self.columns_filepath,'w') as f_c:
+            with open(self.columns_filepath,'r+') as f_c:
                 f_c.seek(0,2)
                 for attr in attribute_list:
                     formatted_attribute = relation_name + ","
@@ -84,7 +106,7 @@ class System:
 
             # create csv to store data in table
             with open(current_table_path,'w') as f_t:
-                attr_name_list = [relation_name]
+                attr_name_list = []
                 for attr in attribute_list:
                     attr_name_list.append(attr[0])
 
@@ -154,7 +176,7 @@ class System:
             data_list.append(data[attri])
 
         
-        with open(current_table_path,'w') as f_t:
+        with open(current_table_path,'r+') as f_t:
             f_t.seek(0,2)
             f_t.write(",".join(data_list)+"\n")
 
@@ -223,12 +245,16 @@ class System:
 
 if __name__=='__main__':
     mySystem=System()
-    mySystem.Create_Database('ZOO')
-    # open database
-    ATTRIBUTE=namedtuple('attribute',['name','data_type','offset','p_key'])
-    A1=ATTRIBUTE(*['animal_name','STR',0,True])
-    A2=ATTRIBUTE(*['animal_age','INT',1,False])
-    mySystem.Create_Table('Zoo','name_age',[A1,A2])
+    mySystem.Create_Database('CLASS')
+    # # open database
+    # # ATTRIBUTE=namedtuple('attribute',['name','data_type','offset','p_key'])
+    # # A1=ATTRIBUTE(*['animal_name','STR',0,True])
+    # # A2=ATTRIBUTE(*['animal_age','INT',1,False])
+    mySystem.Create_Table('name_age',[['name','String',True],['age','INT',False]])
+    # mySystem.open_database('CLASS')
+    # mySystem.Drop_Table('name_age')
+    # mySystem.Drop_Database()
+
 
 
 
