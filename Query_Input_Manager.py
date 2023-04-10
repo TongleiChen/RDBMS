@@ -4,6 +4,47 @@
 #    (Recursive descent) parser
 from collections import namedtuple
 from lark import Lark
+from beautifultable import BeautifulTable
+
+# start: database for testing
+datatables = {
+	"people": {
+		"first_name": ["Elvis", "Elton", "Ariana", "Katy", "Blake"],
+		"last_name": ["Presley", "John", "Grande", "Perry", "Lively"],
+		"age": [42, 75, 36, 37, 34],
+		"city": ["Memphis", "Pinner", "Boca Raton", "Santa Barbara", "Los Angeles"],
+		"day": [8, 25, 6, 25, 25],
+		"month": [1, 3, 6, 10, 8],
+		"year": [1935, 1947, 1993, 1984, 1987],
+		"alive": ["no", "yes", "yes", "yes", "yes"]
+	},
+	"sports": {
+		"team": ["Arsenal", "Manchester United", "Brentford", "Liverpool"],
+		"city": ["London", "Manchester", "Brentford", "Liverpool"],
+		"standing": [4, 6, 12, 2],
+		"year_founded": [1886, 1878, 1889, 1892]
+	}
+}
+
+comparisons = ["=", ">", "<", ">=", "<="]
+select_cols = []
+tables = []
+where_items = []
+max_min_cols = []
+order_by_cols = []
+asc_desc = ""
+max_min = ""
+
+end_flag = False
+all_flag = False
+from_flag = False
+column_flag = False
+where_flag = False
+between_flag = False
+max_min_flag = False
+order_by_flag = False
+# result = BeautifulTable()
+# end: database for testing
 
 # SELECT GRAMMAR
 SELECT_SQL_Grammar = """
@@ -50,7 +91,8 @@ SELECT_SQL_Grammar = """
 
 	select_statement: SELECT selection from_clause options*
 
-	selection: ALL | num_word_commalist
+	selection: ALL
+		| num_word_commalist
 
 	num_word_commalist: [max_min] num_word
 		| num_word_commalist COMMA [max_min] num_word
@@ -59,7 +101,8 @@ SELECT_SQL_Grammar = """
 		| LEFT_PAREN num_word RIGHT_PAREN
 		| item
 
-	options: where_clause | order_by_clause
+	options: where_clause
+		| order_by_clause
 
 	from_clause: FROM column_table_commalist
 
@@ -138,14 +181,11 @@ UPDATE_SQL_Grammar = """
 	%import common.SIGNED_NUMBER
 	%import common.WS
 	%ignore WS
-    
-    UPDATE: "UPDATE"i
-    SET: "SET"i
 
     start: [update_statement end]
-	end: SEMICOLON
+	end: ";"
 
-    update_statement: UPDATE table_name SET update_list where_clause?
+    update_statement: "UPDATE" table_name "SET" update_list where_clause?
 
     update_list: update_clause ("," update_clause)*
 
@@ -162,8 +202,6 @@ UPDATE_SQL_Grammar = """
     table_name: CNAME
     column_name: CNAME
     NUMBER: SIGNED_NUMBER+
-    SEMICOLON: ";"
-
 
 """
 # INSERT GRAMMAR
@@ -221,17 +259,343 @@ DELETE_SQL_Grammar = """
 
 """
 
+class SELECT_tree_Evaluator:
+	def __init__(self,grammar,query) -> None:
+		self.parser = Lark(grammar)
+		self.query=query
+		self.result=BeautifulTable()
+
+	def get_result(self):
+		tree=self.parser.parse(self.query)
+		self.eval_tree(tree)
+		return self.result
+
+	def apply(self,token):
+
+		global asc_desc, max_min, end_flag, all_flag, column_flag, from_flag, where_flag, between_flag, max_min_flag, order_by_flag
+
+		if token == "SELECT":
+			column_flag = True
+		elif token == ";":
+			end_flag = True
+		elif token == "ORDER":
+			order_by_flag = True
+			from_flag = False
+		elif token == "BY":
+			pass
+		elif token == "FROM":
+			from_flag = True
+		elif token == "WHERE":
+			where_flag = True
+		elif token == "BETWEEN":
+			between_flag = True
+		elif token == "AND":
+			pass
+		elif token == "ASC":
+			asc_desc = "ASC"
+		elif token == "DESC":
+			asc_desc = "DESC"
+		elif order_by_flag:
+			if asc_desc != "ASC" and asc_desc != "DESC":
+				order_by_cols.append(token)
+		elif token == "MAX":
+			max_min = "MAX"
+			max_min_flag = True
+		elif token == "MIN":
+			max_min = "MIN"
+			max_min_flag = True
+		elif where_flag:
+			where_items.append(token)
+		elif from_flag:
+			if token.type == "NAME":
+				tables.append(token)
+		elif max_min_flag:
+			max_min_cols.append(token)
+			max_min_flag = False
+			select_cols.append(token)
+		elif column_flag:
+			if token == "*":
+				all_flag = True
+			else:
+				select_cols.append(token)
+
+		if end_flag:
+			if where_flag:
+				if between_flag:
+					matches = {}
+					for name in tables:
+						for key, values in datatables[name].items():
+							between_vals = []
+							if key == where_items[0]:
+								for v in values:
+									for item in where_items[1:]:
+										if item.type == "NUMBER":
+											between_vals.append(int(item))
+										elif item.type == "NAME":
+											between_vals.append(str(item))
+									if between_vals[0] < v < between_vals[1]:
+										if key in matches:
+											matches[key].append(v)
+										else:
+											matches[key] = [v]
+
+								indices = []
+								for v in values:
+									for match in matches[key]:
+										if v in matches[key]:
+											indices.append(values.index(match))						
+						datatables[name] = {k:[elt for ind, elt in enumerate(v) if ind in indices] for k,v in datatables[name].items()}
+				else:
+					temp_cols = []
+					for name in tables:
+						for key, value in datatables[name].items():
+							temp_comps = []
+							temp_vals = []
+							quote_count = 0
+							concat_val = ""
+							for item in where_items:
+								if key == item:
+									temp_cols.append(key)
+								elif item in comparisons:
+									temp_comps.append(item)
+								if item not in temp_cols and item not in temp_comps:
+									if item == "'":
+										quote_count += 1
+									if item.type == "NUMBER":
+										temp_vals.append(int(item))
+									elif item.type == "NAME":
+										temp_vals.append(str(item))
+										if quote_count % 2 != 0:
+											concat_val = " ".join([concat_val, item])
+											temp_vals.remove(item)
+									if quote_count % 2 == 0:
+										temp_vals.append(concat_val)
+										concat_val = ""
+
+						indices = []
+						valid_data = []
+						for col in temp_cols:
+							for sign in temp_comps:
+								for val in temp_vals:
+									if val == "":
+										break
+									elif isinstance(val, str):
+										val = val[1:]
+									for data in datatables[name][col]:
+										if sign == "=":
+											if data == val:
+												valid_data.append(data)
+										if sign == ">":
+											if data > val:
+												valid_data.append(data)
+										if sign == "<":
+											if data < val:
+												valid_data.append(data)
+										if sign == ">=":
+											if data >= val:
+												valid_data.append(data)
+										if sign == "<=":
+											if data <= val:
+												valid_data.append(data)
+							
+								for key, values in datatables[name].items():
+									for v in values:
+										for d in valid_data:
+											if v in valid_data:
+												indices.append(values.index(d))
+											
+						datatables[name] = {k:[elt for ind, elt in enumerate(v) if ind in indices] for k,v in datatables[name].items()}
+
+			if order_by_flag:
+				for name in tables:
+					for key in datatables[name].keys():
+						for col in order_by_cols:
+							if key == col:
+								if asc_desc == "ASC":
+									datatables[name][key].sort()
+								elif asc_desc == "DESC":
+									datatables[name][key].sort(reverse=True)
+
+			if all_flag:
+				for name in tables:
+					for value in datatables[name].values():
+						self.result.columns.append(value)
+					self.result.columns.header = datatables[name].keys()
+				# print(result)
+			else:
+				for name in tables:
+					datatables[name] = {k : datatables[name][k] for k in select_cols}
+					index = []
+					if max_min == "MAX":
+						for col in max_min_cols:
+							index.append(datatables[name][col].index(max(datatables[name][col])))
+						datatables[name] = {k:[elt for ind, elt in enumerate(v) if ind in index] for k,v in datatables[name].items()}
+					elif max_min == "MIN":
+						for col in max_min_cols:
+							index.append(datatables[name][col].index(min(datatables[name][col])))
+						datatables[name] = {k:[elt for ind, elt in enumerate(v) if ind in index] for k,v in datatables[name].items()}
+
+					for key, value in datatables[name].items():
+						if key in select_cols:
+							self.result.columns.append(value)
+				self.result.columns.header = select_cols
+				# print(result)
+
+	def eval_tree(self,tree):
+		if tree.data == "start":
+			self.eval_tree(tree.children[0]) #select_statement
+			self.eval_tree(tree.children[1]) #end
+		elif tree.data == "end":
+			self.apply(tree.children[0]) #SEMICOLON
+		elif tree.data == "select_statement":
+			self.apply(tree.children[0]) #SELECT
+			self.eval_tree(tree.children[1]) #selection
+			self.eval_tree(tree.children[2]) #from clause
+			if len(tree.children) > 3:
+				self.eval_tree(tree.children[3])
+		elif tree.data == "selection":
+			if tree.children[0] == "*":
+				self.apply(tree.children[0]) # (all) *
+			else:
+				self.eval_tree(tree.children[0])
+		elif tree.data == "num_word_commalist":
+			#tree.children[1] 	comma
+			if len(tree.children) == 2:
+				if tree.children[0] != None: #optional max/min
+					self.eval_tree(tree.children[0])
+				self.eval_tree(tree.children[1])
+			else:
+				self.eval_tree(tree.children[0])
+				if tree.children[2] != None: #optional max/min
+					self.eval_tree(tree.children[2])
+				self.eval_tree(tree.children[3])
+		elif tree.data == "num_word":
+			if len(tree.children) == 3:
+				#eval_tree(tree.children[0]) left parenthesis
+				self.eval_tree(tree.children[1])
+				#eval_tree(tree.children[2]) right parenthesis
+			elif len(tree.children) == 1:
+				self.eval_tree(tree.children[0])
+		elif tree.data == "from_clause":
+			self.apply(tree.children[0])
+			self.eval_tree(tree.children[1])
+		elif tree.data == "column_table_commalist":
+			self.eval_tree(tree.children[0])
+		elif tree.data == "column_table":
+			self.eval_tree(tree.children[0])
+		elif tree.data == "char_num":
+			for x in range(len(tree.children)):
+				self.apply(tree.children[x])
+		elif tree.data == "options":
+			self.eval_tree(tree.children[0])
+		elif tree.data == "where_clause":
+			self.apply(tree.children[0]) #WHERE
+			self.eval_tree(tree.children[1]) # search condition
+		elif tree.data == "order_by_clause":
+			self.apply(tree.children[0]) #ORDER
+			self.apply(tree.children[1]) #BY
+			self.eval_tree(tree.children[2]) # order_by_commalist
+		elif tree.data == "search_condition":
+			self.eval_tree(tree.children[0])
+		elif tree.data == "predicate":
+			self.eval_tree(tree.children[0])
+		elif tree.data == "comparison_predicate":
+			self.eval_tree(tree.children[0]) #num_word
+			self.eval_tree(tree.children[1]) #comparison
+			self.eval_tree(tree.children[2])
+		elif tree.data == "comparison":
+			self.apply(tree.children[0])
+		elif tree.data == "between_predicate":
+			self.eval_tree(tree.children[0])
+			self.apply(tree.children[1])
+			self.eval_tree(tree.children[2])
+			self.apply(tree.children[3])
+			self.eval_tree(tree.children[4])
+		elif tree.data == "order_by_commalist":
+			#tree.children[1] 	comma
+			if len(tree.children) == 1:
+				self.eval_tree(tree.children[0])
+			else:
+				self.eval_tree(tree.children[0])
+				self.eval_tree(tree.children[2])
+		elif tree.data == "order_by":
+			self.eval_tree(tree.children[0]) #column_table
+			self.eval_tree(tree.children[1]) #asc_desc
+		elif tree.data == "asc_desc":
+			self.apply(tree.children[0])
+		elif tree.data == "max_min":
+			self.apply(tree.children[0])
+		elif tree.data == "item":
+			self.apply(tree.children[0]) # quote
+			self.eval_tree(tree.children[1])
+			self.apply(tree.children[2]) # quote
+		else:
+			raise SyntaxError('unrecognized tree')
+
+class UPDATE_tree_Evaluator:
+	def __init__(self,grammar,query) -> None:
+		self.parser = Lark(grammar)
+		self.query=query
+		self.result=BeautifulTable()
+		self.table_name=None # Name of Table being changed
+		self.update_clause={"cols":[],"vals":[]} # Update clause list
+		self.where_clause={"cols":[],"ops":[],"vals":[]} # Where clause list
+
+	def get_result(self):
+		tree=self.parser.parse(self.query)
+		self.eval_tree(tree)
+		return self.result
+
+	def eval_tree(self,tree):
+		if tree.data == "start":
+			self.eval_tree(tree.children[0]) # "update_statement"
+			# "END"
+		elif tree.data == "update_statement":
+			self.table_name=tree.children[1].children[0]
+			self.eval_tree(tree.children[3])
+			if len(tree.children) == 5:
+				self.eval_tree(tree.children[4])
+		
+		# TODO 怎么去抓出update clause 和 where clause
+		# self.update_clause={"cols":[],"vals":[]} 
+		# self.where_clause={"cols":[],"ops":[],"vals":[]} 
+		elif tree.data == "update_list":
+			for child in tree.children:
+				if child.data==",":
+					continue
+				else:
+					self.eval_tree(child)
+		elif tree.data == "update_clause":
+			column_name = tree.children[0].children[0]
+			new_value = tree.children[2].children[0]
+		
+		elif tree.data == "where_clause":
+			column_name=tree.children[0].children[0]
+			comparisons_op=tree.children[1].children[0]
+			val=tree.children[2].children[0]
+		else:
+			raise ValueError(f"Invalid syntax query")
+
+
+        
+
+		
+
+
+
+
+		
+
 if __name__=='__main__':
     # 1. select grammer
-    SELECT_Parser = Lark(SELECT_SQL_Grammar)
-    select_query = "SELECT name FROM users;"
-    select_tree = SELECT_Parser.parse(select_query)
-    # parser output: tree
-    print(select_tree.pretty())
+	select_query = "SELECT * FROM people;"
+	SELECT_SQL_EVALUATOR=SELECT_tree_Evaluator(SELECT_SQL_Grammar,select_query)
+	print(SELECT_SQL_EVALUATOR.get_result())
+
     
 	# 2. create grammer
-    CREATE_Parser = Lark(CREATE_SQL_Grammar)
-    create_query = """
+	CREATE_Parser = Lark(CREATE_SQL_Grammar)
+	create_query = """
     CREATE TABLE customers (
     id INT PRIMARY KEY,
     name VARCHAR(50) NOT NULL,
@@ -239,35 +603,33 @@ if __name__=='__main__':
     email VARCHAR(100) NOT NULL
 	);
     """
-    create_tree = CREATE_Parser.parse(create_query)
-    print(create_tree.pretty())	
+	create_tree = CREATE_Parser.parse(create_query)
+	print(create_tree.pretty())	
 
 	# 3. drop grammer
-    DROP_Parser = Lark(DROP_SQL_Grammar)
-    drop_query="DROP TABLE mybook;"
-    update_tree = DROP_Parser.parse(drop_query)
-    drop_tree=DROP_Parser.parse(drop_query)
-    print(drop_tree.pretty())
+	DROP_Parser = Lark(DROP_SQL_Grammar)
+	drop_query="DROP TABLE mybook;"
+	update_tree = DROP_Parser.parse(drop_query)
+	drop_tree=DROP_Parser.parse(drop_query)
+	print(drop_tree.pretty())
 
 	# 4. update grammer
-    UPDATE_Parser = Lark(UPDATE_SQL_Grammar)
-    update_query="UPDATE my_table SET column1 = 5, column2 = 3 WHERE column3 > 10;"
-    update_tree = UPDATE_Parser.parse(update_query)
-    print(update_tree.pretty())
+	UPDATE_Parser = Lark(UPDATE_SQL_Grammar)
+	update_query="UPDATE my_table SET column1 = 5, column2 = 3 WHERE column3 > 10;"
+	update_tree = UPDATE_Parser.parse(update_query)
+	print(update_tree.pretty())
     
 	# INSERT grammer
-    INSERT_Parser = Lark(INSERT_SQL_Grammar)
-    insert_query="INSERT INTO customers (name, age) VALUES ('John', 30);"
-    insert_tree = INSERT_Parser.parse(insert_query)
-    print(insert_tree.pretty())
+	INSERT_Parser = Lark(INSERT_SQL_Grammar)
+	insert_query="INSERT INTO customers (name, age) VALUES ('John', 30);"
+	insert_tree = INSERT_Parser.parse(insert_query)
+	print(insert_tree.pretty())
 
 	# DELETE grammer
-    DELETE_Parser = Lark(DELETE_SQL_Grammar)
-    delete_query="DELETE FROM customers WHERE age < 18;"
-    delete_tree = DELETE_Parser.parse(delete_query)
-    print(delete_tree.pretty())	
+	DELETE_Parser = Lark(DELETE_SQL_Grammar)
+	delete_query="DELETE FROM customers WHERE age < 18;"
+	delete_tree = DELETE_Parser.parse(delete_query)
+	print(delete_tree.pretty())	
     
 	# mySystem.get_data(relation_name):
-	#  
-
 
