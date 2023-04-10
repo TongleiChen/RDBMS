@@ -221,7 +221,9 @@ INSERT_SQL_Grammar = """
     
     start: [insert_statement end]
     
-    insert_statement: "INSERT INTO" CNAME "(" column_name_commalist ")" "VALUES" "(" value_commalist ")"
+    insert_statement: "INSERT INTO" table_name "(" column_name_commalist ")" "VALUES" "(" value_commalist ")"
+    
+    table_name: CNAME
 
     column_name_commalist: column_name | column_name_commalist "," column_name
 
@@ -549,15 +551,14 @@ class UPDATE_tree_Evaluator:
 
 	def get_result(self):
 		tree=self.parser.parse(self.query)
-		print(tree.pretty())
 		self.eval_tree(tree)
-		# TODO 在database 处理抓出来的table_name, update_clause, where_clause
+		# TODO to get results
 		print("table to be updated: ",self.table_name)
 		print("update clause: ",self.update_clause)
 		print("where clause: ",self.where_clause)
+		...
 		return self.result
 	
-
 	def eval_tree(self,tree):
 		if tree.data == "start":
 			self.eval_tree(tree.children[0]) # "update_statement"
@@ -588,16 +589,69 @@ class UPDATE_tree_Evaluator:
 		else:
 			raise ValueError(f"Invalid syntax query")
 
+class DROP_tree_Evaluator:
+	def __init__(self,grammar,query) -> None:
+		self.parser = Lark(grammar)
+		self.query=query
+		self.result=BeautifulTable()
+		self.table_name=None # Name of Table being dropped
+		
+	def get_result(self):
+		tree=self.parser.parse(self.query)
+		self.eval_tree(tree)
+		# TODO to get results
+		print("table to be dropped: ",self.table_name)
+		...
+		return self.result
+	
+	def eval_tree(self,tree):
+		if tree.data == "start":
+			self.eval_tree(tree.children[0])
+		elif tree.data == "drop_statement":
+			self.eval_tree(tree.children[0])
+		elif tree.data == "table_name":
+			self.table_name=tree.children[0].value
+		else:
+			raise ValueError(f"Invalid syntax query")
 
-    
+class INSERT_tree_Evaluator:
+	def __init__(self,grammar,query) -> None:
+		self.parser = Lark(grammar)
+		self.query=query
+		self.result=BeautifulTable()
+		self.table_name=None # Name of Table being inserted
+		self.insert_cols=[]
+		self.insert_vals=[]
+	
+	def get_result(self):
+		tree=self.parser.parse(self.query)
+		self.eval_tree(tree)
+		# TODO to get results
+		print("table to be inserted: ",self.table_name)
+		print("insert columns: ",self.insert_cols)
+		print("insert valuse: ",self.insert_vals)
+		...
+		return self.result
+	
+	def eval_tree(self,tree):
+		if tree.data == "start":
+			self.eval_tree(tree.children[0])
+		elif tree.data == "insert_statement":
+			self.table_name=tree.children[0].children[0]
+			self.eval_tree(tree.children[1]) # columns list
+			self.eval_tree(tree.children[2]) # values list
+
+		
+
+	
 if __name__=='__main__':
-    # 1. select grammer
+    # 1. select grammar
 	select_query = "SELECT * FROM people;"
 	SELECT_SQL_EVALUATOR=SELECT_tree_Evaluator(SELECT_SQL_Grammar,select_query)
 	print(SELECT_SQL_EVALUATOR.get_result())
 
     
-	# 2. create grammer
+	# 2. create grammar
 	CREATE_Parser = Lark(CREATE_SQL_Grammar)
 	create_query = """
     CREATE TABLE customers (
@@ -610,26 +664,23 @@ if __name__=='__main__':
 	create_tree = CREATE_Parser.parse(create_query)
 	print(create_tree.pretty())	
 
-	# 3. drop grammer
-	DROP_Parser = Lark(DROP_SQL_Grammar)
+	# 3. drop grammar
 	drop_query="DROP TABLE mybook;"
-	update_tree = DROP_Parser.parse(drop_query)
-	drop_tree=DROP_Parser.parse(drop_query)
-	print(drop_tree.pretty())
+	DROP_SQL_EVALUATOR=DROP_tree_Evaluator(DROP_SQL_Grammar,drop_query)
+	print(DROP_SQL_EVALUATOR.get_result())
 
-	# 4. update grammer
+	# 4. update grammar
 	update_query="UPDATE my_table SET column1 = 5, column2 = 3 WHERE column3 >= 10;"
 	UPDATE_SQL_EVALUATOR=UPDATE_tree_Evaluator(UPDATE_SQL_Grammar,update_query)
 	print(UPDATE_SQL_EVALUATOR.get_result())
 
     
-	# INSERT grammer
-	INSERT_Parser = Lark(INSERT_SQL_Grammar)
+	# INSERT grammar
 	insert_query="INSERT INTO customers (name, age) VALUES ('John', 30);"
-	insert_tree = INSERT_Parser.parse(insert_query)
-	print(insert_tree.pretty())
+	INSERT_SQL_EVALUATOR=INSERT_tree_Evaluator(INSERT_SQL_Grammar,insert_query)
+	print(INSERT_SQL_EVALUATOR.get_result())
 
-	# DELETE grammer
+	# DELETE grammar
 	DELETE_Parser = Lark(DELETE_SQL_Grammar)
 	delete_query="DELETE FROM customers WHERE age < 18;"
 	delete_tree = DELETE_Parser.parse(delete_query)
