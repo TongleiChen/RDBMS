@@ -5,6 +5,7 @@
 from collections import namedtuple
 from lark import Lark
 from beautifultable import BeautifulTable
+import Data_Definition_Language
 
 # start: database for testing
 datatables = {
@@ -196,8 +197,13 @@ UPDATE_SQL_Grammar = """
     where_clause: "WHERE" search_condition
 
     search_condition: (column_name | new_value) comparison_operator (column_name | new_value)
-
-    comparison_operator: "==" | "!=" | "<" | ">" | "<=" | ">=" 
+    
+    EQUAL: "="
+	LT: "<"
+	GT: ">"
+	LTE: "<="
+	GTE: ">="
+	comparison_operator: EQUAL | LT | GT | LTE | GTE
 
     table_name: CNAME
     column_name: CNAME
@@ -543,49 +549,47 @@ class UPDATE_tree_Evaluator:
 
 	def get_result(self):
 		tree=self.parser.parse(self.query)
+		print(tree.pretty())
 		self.eval_tree(tree)
+		# TODO 在database 处理抓出来的table_name, update_clause, where_clause
+		print("table to be updated: ",self.table_name)
+		print("update clause: ",self.update_clause)
+		print("where clause: ",self.where_clause)
 		return self.result
+	
 
 	def eval_tree(self,tree):
 		if tree.data == "start":
 			self.eval_tree(tree.children[0]) # "update_statement"
 			# "END"
 		elif tree.data == "update_statement":
-			self.table_name=tree.children[1].children[0]
-			self.eval_tree(tree.children[3])
-			if len(tree.children) == 5:
-				self.eval_tree(tree.children[4])
+			self.table_name=tree.children[0].children[0]
+			self.eval_tree(tree.children[1])
+			if len(tree.children) == 3:
+				self.eval_tree(tree.children[2])
 		
-		# TODO 怎么去抓出update clause 和 where clause
 		# self.update_clause={"cols":[],"vals":[]} 
 		# self.where_clause={"cols":[],"ops":[],"vals":[]} 
 		elif tree.data == "update_list":
 			for child in tree.children:
-				if child.data==",":
-					continue
-				else:
-					self.eval_tree(child)
+				self.eval_tree(child)
+
 		elif tree.data == "update_clause":
-			column_name = tree.children[0].children[0]
-			new_value = tree.children[2].children[0]
+			self.update_clause["cols"].append(tree.children[0].children[0].value)
+			self.update_clause["vals"].append(int(tree.children[1].children[0].value))
+		elif tree.data=="where_clause":
+			self.eval_tree(tree.children[0])
+
+		elif tree.data == "search_condition":
+			self.where_clause["cols"].append(tree.children[0].children[0].value)
+			self.where_clause["ops"].append(tree.children[1].children[0].value)
+			self.where_clause["vals"].append(int(tree.children[2].children[0].value))
 		
-		elif tree.data == "where_clause":
-			column_name=tree.children[0].children[0]
-			comparisons_op=tree.children[1].children[0]
-			val=tree.children[2].children[0]
 		else:
 			raise ValueError(f"Invalid syntax query")
 
 
-        
-
-		
-
-
-
-
-		
-
+    
 if __name__=='__main__':
     # 1. select grammer
 	select_query = "SELECT * FROM people;"
@@ -614,10 +618,10 @@ if __name__=='__main__':
 	print(drop_tree.pretty())
 
 	# 4. update grammer
-	UPDATE_Parser = Lark(UPDATE_SQL_Grammar)
-	update_query="UPDATE my_table SET column1 = 5, column2 = 3 WHERE column3 > 10;"
-	update_tree = UPDATE_Parser.parse(update_query)
-	print(update_tree.pretty())
+	update_query="UPDATE my_table SET column1 = 5, column2 = 3 WHERE column3 >= 10;"
+	UPDATE_SQL_EVALUATOR=UPDATE_tree_Evaluator(UPDATE_SQL_Grammar,update_query)
+	print(UPDATE_SQL_EVALUATOR.get_result())
+
     
 	# INSERT grammer
 	INSERT_Parser = Lark(INSERT_SQL_Grammar)
