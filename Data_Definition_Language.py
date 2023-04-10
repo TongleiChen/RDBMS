@@ -57,7 +57,7 @@ class System:
             f.readline()
             for line_2 in f.readlines():
                 line_2 = line_2.strip("\n")
-                line_2 = line_2.split(",")
+                line_2 = line_2.split(",") 
                 
                 if line_2[0] in self.table_attributes:
 
