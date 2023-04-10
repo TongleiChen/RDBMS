@@ -174,7 +174,8 @@ class System:
 
     def insert_data(self,relation_name,data:dict):
         # TODO: 
-        # Check duplicates
+        # Check duplicates 
+        # YUNI: 是在这里check还是在到这里之前check比较好？？
         current_table_path = self.table_path[relation_name]
         attribute_list = self.table_attributes[relation_name]
         data_list = []
@@ -210,6 +211,7 @@ class System:
 
     def update_data(self,relation_name,data_pos,data:dict):
         # TODO: Check duplicates
+
         current_table_path = self.table_path[relation_name]
         
         attribute_list = self.table_attributes[relation_name]
