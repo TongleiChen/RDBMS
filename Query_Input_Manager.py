@@ -148,15 +148,24 @@ CREATE_SQL_Grammar = """
     
     start: [create_statement end]
     
-    create_statement: "CREATE TABLE" CNAME "(" field_list ")" 
+    create_statement: "CREATE TABLE" table_name "(" field_list ")" 
+    
+    table_name: CNAME
 
     field_list: field_definition ("," field_definition)*
 
-    field_definition: CNAME data_type field_constraints?
+    field_definition: attribute_name data_type field_constraints?
+    
+    attribute_name: CNAME
 
-    data_type: "INT" | "FLOAT" | "VARCHAR" "(" /[0-9]+/ ")"
+    INT: "INT"
+    FT: "FLOAT"
+    VCHR: "VARCHAR" "(" /[0-9]+/ ")"
+	data_type: INT | FT | VCHR
 
-    field_constraints: "NOT NULL" | "PRIMARY KEY"
+	NOTNULL: "NOT NULL"
+	KEY: "PRIMARY KEY"
+    field_constraints: NOTNULL | KEY
     
     end:";"
 
@@ -717,8 +726,19 @@ class CREATE_tree_Evaluator:
 		if tree.data == "start":
 			self.eval_tree(tree.children[0]) # create_statement
 		elif tree.data == "create_statement":
-			# 需要把create_statement里的CNAME改为table_name
-			...
+			self.table_name=tree.children[0].children[0] # table_name
+			self.eval_tree(tree.children[1]) # field_list
+		elif tree.data == "field_list":
+			for child in tree.children:
+				self.eval_tree(child) # field definition
+		elif tree.data == "field_definition":
+			self.attributes_clause["names"].append(tree.children[0].children[0].value)
+			self.attributes_clause["data_type"].append(tree.children[1].children[0].value)
+			if len(tree.children)==2:
+				self.attributes_clause["constraints"].append("None")
+			elif len(tree.children)==3:
+				self.attributes_clause["constraints"].append(tree.children[2].children[0].value)
+
 		else:
 			raise ValueError(f"Invalid syntax query")
 
@@ -733,7 +753,6 @@ if __name__=='__main__':
 
     
 	# 2. create grammar
-	CREATE_Parser = Lark(CREATE_SQL_Grammar)
 	create_query = """
     CREATE TABLE customers (
     id INT PRIMARY KEY,
@@ -742,8 +761,8 @@ if __name__=='__main__':
     email VARCHAR(100) NOT NULL
 	);
     """
-	create_tree = CREATE_Parser.parse(create_query)
-	print(create_tree.pretty())	
+	CREATE_SQL_EVALUATOR=CREATE_tree_Evaluator(CREATE_SQL_Grammar,create_query)
+	print(CREATE_SQL_EVALUATOR.get_result())
 
 	# 3. drop grammar
 	# 0410 tested
