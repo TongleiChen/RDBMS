@@ -65,7 +65,7 @@ class System:
                 else:
                     self.table_attributes[line_2[0]] = [line_2[1:]]
 
-        # print(self.table_attributes)
+        print(self.table_attributes)
         # print(self.table_path)
         return
     def Drop_Database(self):
@@ -235,7 +235,9 @@ class System:
     
     def get_data(self,relation_name):
         # YUNI: 0408 Tested
-        # YUNI: 不知道return 应该是list还是dict还是什么
+        # YUNI: 不知道return 应该是list还是dict还是什么 -0408
+        # YUNI: 看了Suzy的code觉得应该是return一个dict -0411
+        # YUNI: 0411 Edited
         current_table_path = self.table_path[relation_name]
         data_in_table = []
         data_attributes = []
@@ -246,8 +248,17 @@ class System:
             for data_line in f.readlines():
                 data_line = data_line.strip('\n')
                 data_in_table.append(data_line.split(","))
+        data_dict = {}
+        for i,column in enumerate(data_attributes):
+            data_dict[column] = []
+            for data_row in data_in_table:
+                if self.table_attributes[relation_name][i][1] == "INT":
+                    data_dict[column].append(int(data_row[i]))
+                else:
+                    data_dict[column].append(data_row[i])
 
-        return data_in_table,data_attributes
+            
+        return data_dict
     
 
     # def Create_Index(self):
