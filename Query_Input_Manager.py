@@ -5,7 +5,7 @@
 from collections import namedtuple
 from lark import Lark
 from beautifultable import BeautifulTable
-import Data_Definition_Language
+from Data_Definition_Language import System
 
 # start: database for testing
 datatables = {
@@ -644,14 +644,14 @@ class INSERT_tree_Evaluator:
 		print("table to be inserted: ",self.table_name)
 		print("insert columns: ",self.insert_cols)
 		print("insert valuse: ",self.insert_vals)
-		...
+		
 		return self.result
 	
 	def eval_tree(self,tree):
 		if tree.data == "start":
 			self.eval_tree(tree.children[0])
 		elif tree.data == "insert_statement":
-			self.table_name=tree.children[0].children[0]
+			self.table_name=tree.children[0].children[0].value # YUNI: 加了.value
 			self.eval_tree(tree.children[1]) # column_name_commalist
 			self.eval_tree(tree.children[2]) # value_commalist
 		elif tree.data == "column_name_commalist":
@@ -779,9 +779,17 @@ if __name__=='__main__':
     
 	# INSERT grammar
 	# 0410 tested
-	insert_query="INSERT INTO customers (name, age) VALUES ('John', 30);"
+	insert_query="INSERT INTO name_age (name, age) VALUES ('John', 30);"
 	INSERT_SQL_EVALUATOR=INSERT_tree_Evaluator(INSERT_SQL_Grammar,insert_query)
 	print(INSERT_SQL_EVALUATOR.get_result())
+	mySystem=System()
+	mySystem.open_database('CLASS')
+	data = {}
+	for i,column in enumerate(INSERT_SQL_EVALUATOR.insert_cols):
+		data[column] = INSERT_SQL_EVALUATOR.insert_vals[i]
+	print(data)
+	mySystem.insert_data(INSERT_SQL_EVALUATOR.table_name,data)
+
 
 	# DELETE grammar
 	# 0410 tested

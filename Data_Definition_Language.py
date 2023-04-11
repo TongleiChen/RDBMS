@@ -188,6 +188,7 @@ class System:
             f_t.seek(0,2)
             f_t.write(",".join(map(str, data_list))+"\n")
 
+        print("INSERT SUCCESSFULLY. ")
         return
 
     def delete_data(self,relation_name,data_pos):
