@@ -148,15 +148,24 @@ CREATE_SQL_Grammar = """
     
     start: [create_statement end]
     
-    create_statement: "CREATE TABLE" CNAME "(" field_list ")" 
+    create_statement: "CREATE TABLE" table_name "(" field_list ")" 
+    
+    table_name: CNAME
 
     field_list: field_definition ("," field_definition)*
 
-    field_definition: CNAME data_type field_constraints?
+    field_definition: attribute_name data_type field_constraints?
+    
+    attribute_name: CNAME
 
-    data_type: "INT" | "FLOAT" | "VARCHAR" "(" /[0-9]+/ ")"
+    INT: "INT"
+    FT: "FLOAT"
+    VCHR: "VARCHAR" "(" /[0-9]+/ ")"
+	data_type: INT | FT | VCHR
 
-    field_constraints: "NOT NULL" | "PRIMARY KEY"
+	NOTNULL: "NOT NULL"
+	KEY: "PRIMARY KEY"
+    field_constraints: NOTNULL | KEY
     
     end:";"
 
@@ -255,7 +264,12 @@ DELETE_SQL_Grammar = """
 
     condition: column_name comparison_operator value
 
-    comparison_operator: "=" | "<" | ">" | "<=" | ">=" | "!="
+    EQUAL: "="
+	LT: "<"
+	GT: ">"
+	LTE: "<="
+	GTE: ">="
+	comparison_operator: EQUAL | LT | GT | LTE | GTE
 
     column_name: CNAME
     
@@ -638,21 +652,107 @@ class INSERT_tree_Evaluator:
 			self.eval_tree(tree.children[0])
 		elif tree.data == "insert_statement":
 			self.table_name=tree.children[0].children[0]
-			self.eval_tree(tree.children[1]) # columns list
-			self.eval_tree(tree.children[2]) # values list
+			self.eval_tree(tree.children[1]) # column_name_commalist
+			self.eval_tree(tree.children[2]) # value_commalist
+		elif tree.data == "column_name_commalist":
+			if len(tree.children)==1:
+				self.insert_cols.append(tree.children[0].children[0].value)
+			else:
+				self.eval_tree(tree.children[0])
+				for child in tree.children[1:]:
+					self.insert_cols.append(child.children[0].value)
+		
+		elif tree.data == "value_commalist":
+			if len(tree.children)==1:
+				self.insert_vals.append(tree.children[0].children[0].value)
+			else:
+				self.eval_tree(tree.children[0])
+				for child in tree.children[1:]:
+					self.insert_vals.append(child.children[0].value)
+		else:
+			raise ValueError(f"Invalid syntax query")
+		
+class DELETE_tree_Evaluator:
+	def __init__(self,grammar,query) -> None:
+		self.parser = Lark(grammar)
+		self.query=query
+		self.result=BeautifulTable()
+		self.table_name=None # Name of Table being delete
+		self.where_clause={"cols":[],"ops":[],"vals":[]} # Where clause list
+	
+	def get_result(self):
+		tree=self.parser.parse(self.query)
+		self.eval_tree(tree)
+		# TODO to get results
+		print("table to be delete: ",self.table_name)
+		print("where clause: ",self.where_clause)
+
+		...
+		return self.result
+	
+	def eval_tree(self,tree):
+		if tree.data == "start":
+			self.eval_tree(tree.children[0])
+		elif tree.data == "delete_statement":
+			self.eval_tree(tree.children[0])
+			self.eval_tree(tree.children[1])
+		elif tree.data == "table_name":
+			self.table_name=tree.children[0].value
+		elif tree.data == "where_clause":
+			self.eval_tree(tree.children[0]) # condition
+		elif tree.data == "condition":
+			self.where_clause["cols"].append(tree.children[0].children[0].value)
+			self.where_clause["ops"].append(tree.children[1].children[0].value)
+			self.where_clause["vals"].append(tree.children[2].children[0].value)
+		else:
+			raise ValueError(f"Invalid syntax query")
+		
+class CREATE_tree_Evaluator:
+	def __init__(self,grammar,query) -> None:
+		self.parser = Lark(grammar)
+		self.query=query
+		self.result=BeautifulTable()
+		self.table_name=None # Name of Table being create
+		self.attributes_clause={"names":[],"data_type":[],"constraints":[]} # Where clause list
+	def get_result(self):
+		tree=self.parser.parse(self.query)
+		self.eval_tree(tree)
+		# TODO to get results
+		print("table to be delete: ",self.table_name)
+		print("attributes clause: ",self.attributes_clause)
+		...
+		return self.result
+	def eval_tree(self,tree):
+		if tree.data == "start":
+			self.eval_tree(tree.children[0]) # create_statement
+		elif tree.data == "create_statement":
+			self.table_name=tree.children[0].children[0] # table_name
+			self.eval_tree(tree.children[1]) # field_list
+		elif tree.data == "field_list":
+			for child in tree.children:
+				self.eval_tree(child) # field definition
+		elif tree.data == "field_definition":
+			self.attributes_clause["names"].append(tree.children[0].children[0].value)
+			self.attributes_clause["data_type"].append(tree.children[1].children[0].value)
+			if len(tree.children)==2:
+				self.attributes_clause["constraints"].append("None")
+			elif len(tree.children)==3:
+				self.attributes_clause["constraints"].append(tree.children[2].children[0].value)
+
+		else:
+			raise ValueError(f"Invalid syntax query")
+
 
 		
-
-	
 if __name__=='__main__':
     # 1. select grammar
+	# 0410 tested
 	select_query = "SELECT * FROM people;"
 	SELECT_SQL_EVALUATOR=SELECT_tree_Evaluator(SELECT_SQL_Grammar,select_query)
 	print(SELECT_SQL_EVALUATOR.get_result())
 
     
 	# 2. create grammar
-	CREATE_Parser = Lark(CREATE_SQL_Grammar)
 	create_query = """
     CREATE TABLE customers (
     id INT PRIMARY KEY,
@@ -661,30 +761,31 @@ if __name__=='__main__':
     email VARCHAR(100) NOT NULL
 	);
     """
-	create_tree = CREATE_Parser.parse(create_query)
-	print(create_tree.pretty())	
+	CREATE_SQL_EVALUATOR=CREATE_tree_Evaluator(CREATE_SQL_Grammar,create_query)
+	print(CREATE_SQL_EVALUATOR.get_result())
 
 	# 3. drop grammar
+	# 0410 tested
 	drop_query="DROP TABLE mybook;"
 	DROP_SQL_EVALUATOR=DROP_tree_Evaluator(DROP_SQL_Grammar,drop_query)
 	print(DROP_SQL_EVALUATOR.get_result())
 
 	# 4. update grammar
+	# 0410 tested
 	update_query="UPDATE my_table SET column1 = 5, column2 = 3 WHERE column3 >= 10;"
 	UPDATE_SQL_EVALUATOR=UPDATE_tree_Evaluator(UPDATE_SQL_Grammar,update_query)
 	print(UPDATE_SQL_EVALUATOR.get_result())
 
     
 	# INSERT grammar
+	# 0410 tested
 	insert_query="INSERT INTO customers (name, age) VALUES ('John', 30);"
 	INSERT_SQL_EVALUATOR=INSERT_tree_Evaluator(INSERT_SQL_Grammar,insert_query)
 	print(INSERT_SQL_EVALUATOR.get_result())
 
 	# DELETE grammar
-	DELETE_Parser = Lark(DELETE_SQL_Grammar)
+	# 0410 tested
 	delete_query="DELETE FROM customers WHERE age < 18;"
-	delete_tree = DELETE_Parser.parse(delete_query)
-	print(delete_tree.pretty())	
-    
-	# mySystem.get_data(relation_name):
+	DELETE_SQL_EVALUATOR=DELETE_tree_Evaluator(DELETE_SQL_Grammar,delete_query)
+	print(DELETE_SQL_EVALUATOR.get_result())
 
