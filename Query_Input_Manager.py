@@ -747,7 +747,7 @@ class CREATE_tree_Evaluator:
 if __name__=='__main__':
     # 1. select grammar
 	# 0410 tested
-	select_query = "SELECT * FROM people;"
+	select_query = "SELECT * FROM people WHERE month=1;"
 	SELECT_SQL_EVALUATOR=SELECT_tree_Evaluator(SELECT_SQL_Grammar,select_query)
 	print(SELECT_SQL_EVALUATOR.get_result())
 
