@@ -8,24 +8,24 @@ from beautifultable import BeautifulTable
 from Data_Definition_Language import System
 
 # start: database for testing
-datatables = {
-	"people": {
-		"first_name": ["Elvis", "Elton", "Ariana", "Katy", "Blake"],
-		"last_name": ["Presley", "John", "Grande", "Perry", "Lively"],
-		"age": [42, 75, 36, 37, 34],
-		"city": ["Memphis", "Pinner", "Boca Raton", "Santa Barbara", "Los Angeles"],
-		"day": [8, 25, 6, 25, 25],
-		"month": [1, 3, 6, 10, 8],
-		"year": [1935, 1947, 1993, 1984, 1987],
-		"alive": ["no", "yes", "yes", "yes", "yes"]
-	},
-	"sports": {
-		"team": ["Arsenal", "Manchester United", "Brentford", "Liverpool"],
-		"city": ["London", "Manchester", "Brentford", "Liverpool"],
-		"standing": [4, 6, 12, 2],
-		"year_founded": [1886, 1878, 1889, 1892]
-	}
-}
+# datatables = {
+# 	"people": {
+# 		"first_name": ["Elvis", "Elton", "Ariana", "Katy", "Blake"],
+# 		"last_name": ["Presley", "John", "Grande", "Perry", "Lively"],
+# 		"age": [42, 75, 36, 37, 34],
+# 		"city": ["Memphis", "Pinner", "Boca Raton", "Santa Barbara", "Los Angeles"],
+# 		"day": [8, 25, 6, 25, 25],
+# 		"month": [1, 3, 6, 10, 8],
+# 		"year": [1935, 1947, 1993, 1984, 1987],
+# 		"alive": ["no", "yes", "yes", "yes", "yes"]
+# 	},
+# 	"sports": {
+# 		"team": ["Arsenal", "Manchester United", "Brentford", "Liverpool"],
+# 		"city": ["London", "Manchester", "Brentford", "Liverpool"],
+# 		"standing": [4, 6, 12, 2],
+# 		"year_founded": [1886, 1878, 1889, 1892]
+# 	}
+# }
 
 comparisons = ["=", ">", "<", ">=", "<="]
 select_cols = []
@@ -286,10 +286,13 @@ class SELECT_tree_Evaluator:
 		self.parser = Lark(grammar)
 		self.query=query
 		self.result=BeautifulTable()
+		self.datatable = {}
 
-	def get_result(self):
+	def get_result(self,datatable):
+		self.datatable = datatable
 		tree=self.parser.parse(self.query)
 		self.eval_tree(tree)
+
 		return self.result
 
 	def apply(self,token):
@@ -346,7 +349,7 @@ class SELECT_tree_Evaluator:
 				if between_flag:
 					matches = {}
 					for name in tables:
-						for key, values in datatables[name].items():
+						for key, values in self.datatable.items():
 							between_vals = []
 							if key == where_items[0]:
 								for v in values:
@@ -366,11 +369,11 @@ class SELECT_tree_Evaluator:
 									for match in matches[key]:
 										if v in matches[key]:
 											indices.append(values.index(match))						
-						datatables[name] = {k:[elt for ind, elt in enumerate(v) if ind in indices] for k,v in datatables[name].items()}
+						self.datatable = {k:[elt for ind, elt in enumerate(v) if ind in indices] for k,v in self.datatable.items()}
 				else:
 					temp_cols = []
 					for name in tables:
-						for key, value in datatables[name].items():
+						for key, value in self.datatable.items():
 							temp_comps = []
 							temp_vals = []
 							quote_count = 0
@@ -403,7 +406,7 @@ class SELECT_tree_Evaluator:
 										break
 									elif isinstance(val, str):
 										val = val[1:]
-									for data in datatables[name][col]:
+									for data in self.datatable[col]:
 										if sign == "=":
 											if data == val:
 												valid_data.append(data)
@@ -420,44 +423,44 @@ class SELECT_tree_Evaluator:
 											if data <= val:
 												valid_data.append(data)
 							
-								for key, values in datatables[name].items():
+								for key, values in self.datatable.items():
 									for v in values:
 										for d in valid_data:
 											if v in valid_data:
 												indices.append(values.index(d))
 											
-						datatables[name] = {k:[elt for ind, elt in enumerate(v) if ind in indices] for k,v in datatables[name].items()}
+						self.datatable = {k:[elt for ind, elt in enumerate(v) if ind in indices] for k,v in self.datatable.items()}
 
 			if order_by_flag:
 				for name in tables:
-					for key in datatables[name].keys():
+					for key in self.datatable.keys():
 						for col in order_by_cols:
 							if key == col:
 								if asc_desc == "ASC":
-									datatables[name][key].sort()
+									self.datatable[key].sort()
 								elif asc_desc == "DESC":
-									datatables[name][key].sort(reverse=True)
+									self.datatable[key].sort(reverse=True)
 
 			if all_flag:
 				for name in tables:
-					for value in datatables[name].values():
+					for value in self.datatable.values():
 						self.result.columns.append(value)
-					self.result.columns.header = datatables[name].keys()
+					self.result.columns.header = self.datatable.keys()
 				# print(result)
 			else:
 				for name in tables:
-					datatables[name] = {k : datatables[name][k] for k in select_cols}
+					self.datatable = {k : self.datatable[k] for k in select_cols}
 					index = []
 					if max_min == "MAX":
 						for col in max_min_cols:
-							index.append(datatables[name][col].index(max(datatables[name][col])))
-						datatables[name] = {k:[elt for ind, elt in enumerate(v) if ind in index] for k,v in datatables[name].items()}
+							index.append(self.datatable[col].index(max(self.datatable[col])))
+						self.datatable = {k:[elt for ind, elt in enumerate(v) if ind in index] for k,v in self.datatable.items()}
 					elif max_min == "MIN":
 						for col in max_min_cols:
-							index.append(datatables[name][col].index(min(datatables[name][col])))
-						datatables[name] = {k:[elt for ind, elt in enumerate(v) if ind in index] for k,v in datatables[name].items()}
+							index.append(self.datatable[col].index(min(self.datatable[col])))
+						self.datatable = {k:[elt for ind, elt in enumerate(v) if ind in index] for k,v in self.datatable.items()}
 
-					for key, value in datatables[name].items():
+					for key, value in self.datatable.items():
 						if key in select_cols:
 							self.result.columns.append(value)
 				self.result.columns.header = select_cols
@@ -747,9 +750,12 @@ class CREATE_tree_Evaluator:
 if __name__=='__main__':
     # 1. select grammar
 	# 0410 tested
-	select_query = "SELECT * FROM people;"
+
+	mySystem=System()
+	mySystem.open_database('CLASS')
+	select_query = "SELECT * FROM name_age;"
 	SELECT_SQL_EVALUATOR=SELECT_tree_Evaluator(SELECT_SQL_Grammar,select_query)
-	print(SELECT_SQL_EVALUATOR.get_result())
+	print(SELECT_SQL_EVALUATOR.get_result(datatable=mySystem.get_data("name_age")))
 
     
 	# 2. create grammar
@@ -782,8 +788,7 @@ if __name__=='__main__':
 	insert_query="INSERT INTO name_age (name, age) VALUES ('John', 30);"
 	INSERT_SQL_EVALUATOR=INSERT_tree_Evaluator(INSERT_SQL_Grammar,insert_query)
 	print(INSERT_SQL_EVALUATOR.get_result())
-	mySystem=System()
-	mySystem.open_database('CLASS')
+	
 	data = {}
 	for i,column in enumerate(INSERT_SQL_EVALUATOR.insert_cols):
 		data[column] = INSERT_SQL_EVALUATOR.insert_vals[i]
