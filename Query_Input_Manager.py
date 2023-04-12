@@ -753,7 +753,7 @@ if __name__=='__main__':
 
 	mySystem=System()
 	mySystem.open_database('CLASS')
-	select_query = "SELECT * FROM name_age;"
+	select_query = "SELECT * FROM name_age WHERE age < 18;"
 	SELECT_SQL_EVALUATOR=SELECT_tree_Evaluator(SELECT_SQL_Grammar,select_query)
 	print(SELECT_SQL_EVALUATOR.get_result(datatable=mySystem.get_data("name_age")))
 
@@ -793,7 +793,7 @@ if __name__=='__main__':
 	for i,column in enumerate(INSERT_SQL_EVALUATOR.insert_cols):
 		data[column] = INSERT_SQL_EVALUATOR.insert_vals[i]
 	print(data)
-	mySystem.insert_data(INSERT_SQL_EVALUATOR.table_name,data)
+	# mySystem.insert_data(INSERT_SQL_EVALUATOR.table_name,data)
 
 
 	# DELETE grammar
