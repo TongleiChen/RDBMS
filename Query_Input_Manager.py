@@ -793,7 +793,7 @@ if __name__=='__main__':
 	for i,column in enumerate(INSERT_SQL_EVALUATOR.insert_cols):
 		data[column] = INSERT_SQL_EVALUATOR.insert_vals[i]
 	print(data)
-	# mySystem.insert_data(INSERT_SQL_EVALUATOR.table_name,data)
+	mySystem.insert_data(INSERT_SQL_EVALUATOR.table_name,data)
 
 
 	# DELETE grammar

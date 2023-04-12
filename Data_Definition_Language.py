@@ -38,7 +38,7 @@ class System:
 
                 # TODO:
                 # Foreign key?
-                f.write('table_name, attribute_name, data_type, primary_key\n')
+                f.write('table_name, attribute_name, data_type, primary_key, foreign_key\n')
             
             print(self.database_name, "CREATED SUCCESSFULLY. ")
 
@@ -209,7 +209,26 @@ class System:
 
         return
     
+    def overwrite_data(self,relation_name,data_dict:dict):
+        current_table_path = self.table_path[relation_name]
+        new_data = []
+        attribute_list = self.table_attributes[relation_name]
+        table_attr = []
+        for attri in attribute_list:
+            table_attr.append(attri[0])
+        new_data.append(",".join(table_attr)+'\n')
 
+        total_number_row = len(data_dict[attri[0]])
+        for i in range(total_number_row):
+            new_line = []
+            for attri in attribute_list:
+                new_line.append(data_dict[attri[0]][i])
+            new_data.append(",".join(map(str,new_line))+'\n')
+        
+        with open(current_table_path,"w") as f:
+            f.writelines(new_data)
+        
+        return
     def update_data(self,relation_name,data_pos,data:dict):
         # TODO: Check duplicates
 
@@ -288,10 +307,17 @@ if __name__=='__main__':
     # mySystem.update_data('name_age',1,data)
     # data = {"name": "suzy","height":170}
     # mySystem.insert_data('name_height',data)
-    print(mySystem.get_data('name_age'))
-    print(mySystem.get_data('name_height'))
+    table_name_age = mySystem.get_data('name_age')
+    print(table_name_age)
+    table_name_age['name'].append('Lesley')
+    table_name_age['age'].append(10)
+    print(table_name_age)
+    mySystem.overwrite_data("name_age",table_name_age)
+
+    # print(mySystem.get_data('name_height'))
     # mySystem.Drop_Table('name_age') 
     # mySystem.Drop_Database()
+
 
 
 
