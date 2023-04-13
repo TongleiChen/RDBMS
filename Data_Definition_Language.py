@@ -209,6 +209,14 @@ class System:
 
         return
     
+    def get_column_list(self,relation_name):
+        attribute_list = self.table_attributes[relation_name]
+        table_attr = []
+        for attri in attribute_list:
+            table_attr.append(attri[0])
+        return table_attr
+    
+
     def overwrite_data(self,relation_name,data_dict:dict):
         current_table_path = self.table_path[relation_name]
         new_data = []
@@ -229,27 +237,74 @@ class System:
             f.writelines(new_data)
         
         return
-    def update_data(self,relation_name,data_pos,data:dict):
-        # TODO: Check duplicates
+    def update_data(self,relation_name,update_dict:dict,where_dict:dict):
 
-        current_table_path = self.table_path[relation_name]
+        # TODO: Check duplicates
+        database_table = self.get_data(relation_name)
+        table_attri = self.get_column_list(relation_name)
+
+        total_number_row = len(database_table[table_attri[0]])
+        match_flag = False
+        where_col = where_dict['cols']
+        where_val = where_dict['vals']
+        where_op = where_dict['ops']
+        for i in range(total_number_row):
+            if where_op == "=":
+
+                if database_table[where_col][i] == where_val:
+                    match_flag = True
+
+            if where_op == ">":
+                if database_table[where_col][i] > where_val:
+                    match_flag = True
+
+
+            if where_op == ">=":
+                if database_table[where_col][i] >= where_val:
+                    match_flag = True
+
+
+            if where_op == "<":
+                if database_table[where_col][i] < where_val:
+                    match_flag = True
+
+            if where_op == "<=":
+                if database_table[where_col][i] <= where_val:
+                    match_flag = True
+            
+            if match_flag == True:
+                for j,column in enumerate(update_dict['cols']):
+                    database_table[column][i] = update_dict['vals'][j]
         
-        attribute_list = self.table_attributes[relation_name]
-        data_list = []
-        for attri in attribute_list:
-            data_list.append(data[attri[0]])
-        updated_data = ",".join(map(str,data_list)) + '\n'
-        new_data = []
-        with open(current_table_path,"r") as f:
-            for pos,data_line in enumerate(f.readlines()):
-                # YUNI: 这里data_pos 是不包括标题那一行的第几行
-                if pos == data_pos + 1:
-                    new_data.append(updated_data)
-                    continue
-                else:
-                    new_data.append(data_line)
-        with open(current_table_path,"w") as f:
-            f.writelines(new_data)
+
+
+
+            
+        
+
+
+
+
+        # current_table_path = self.table_path[relation_name]
+        
+        # attribute_list = self.table_attributes[relation_name]
+        # data_list = []
+        # for attri in attribute_list:
+        #     data_list.append(data[attri[0]])
+        # updated_data = ",".join(map(str,data_list)) + '\n'
+        # new_data = []
+        # with open(current_table_path,"r") as f:
+        #     for pos,data_line in enumerate(f.readlines()):
+        #         # YUNI: 这里data_pos 是不包括标题那一行的第几行
+        #         if pos == data_pos + 1:
+        #             new_data.append(updated_data)
+        #             continue
+        #         else:
+        #             new_data.append(data_line)
+        # with open(current_table_path,"w") as f:
+        #     f.writelines(new_data)
+        # return
+
         return
     
     def get_data(self,relation_name):
