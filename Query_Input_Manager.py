@@ -49,102 +49,102 @@ order_by_flag = False
 
 # SELECT GRAMMAR
 SELECT_SQL_Grammar = """
-	%import common.CNAME
-	%import common.SIGNED_NUMBER
-	%import common.WS
-	%ignore WS
+    %import common.CNAME
+    %import common.SIGNED_NUMBER
+    %import common.WS
+    %ignore WS
 
-	EQUAL: "="
-	LT: "<"
-	GT: ">"
-	LTE: "<="
-	GTE: ">="
-	comparison: EQUAL | LT | GT | LTE | GTE
-	COMMA: ","
-	PERIOD: "."
-	LEFT_PAREN: "("
-	RIGHT_PAREN: ")"
-	SEMICOLON: ";"
-	QUOTE: "'"
+    EQUAL: "="
+    LT: "<"
+    GT: ">"
+    LTE: "<="
+    GTE: ">="
+    comparison: EQUAL | LT | GT | LTE | GTE
+    COMMA: ","
+    PERIOD: "."
+    LEFT_PAREN: "("
+    RIGHT_PAREN: ")"
+    SEMICOLON: ";"
+    QUOTE: "'"
 
-	NAME: CNAME+
-	NUMBER: SIGNED_NUMBER+
+    NAME: CNAME+
+    NUMBER: SIGNED_NUMBER+
 
-	ALL: "*"
-	AND: "AND"i
-	ASC: "ASC"i
-	BETWEEN: "BETWEEN"i
-	BY: "BY"i
-	DESC: "DESC"i
-	FROM: "FROM"i
-	MAX: "MAX"i
-	MIN: "MIN"i
-	ORDER: "ORDER"i
-	SELECT: "SELECT"i
-	WHERE: "WHERE"i
+    ALL: "*"
+    AND: "AND"i
+    ASC: "ASC"i
+    BETWEEN: "BETWEEN"i
+    BY: "BY"i
+    DESC: "DESC"i
+    FROM: "FROM"i
+    MAX: "MAX"i
+    MIN: "MIN"i
+    ORDER: "ORDER"i
+    SELECT: "SELECT"i
+    WHERE: "WHERE"i
 
 
-	char_num: (NAME | NUMBER)*
+    char_num: (NAME | NUMBER)*
 
-	start: [select_statement end]
+    start: [select_statement end]
 
-	end: SEMICOLON
+    end: SEMICOLON
 
-	select_statement: SELECT selection from_clause options*
+    select_statement: SELECT selection from_clause options*
 
-	selection: ALL
-		| num_word_commalist
+    selection: ALL
+        | num_word_commalist
 
-	num_word_commalist: [max_min] num_word
-		| num_word_commalist COMMA [max_min] num_word
+    num_word_commalist: [max_min] num_word
+        | num_word_commalist COMMA [max_min] num_word
 
-	num_word: column_table
-		| LEFT_PAREN num_word RIGHT_PAREN
-		| item
+    num_word: column_table
+        | LEFT_PAREN num_word RIGHT_PAREN
+        | item
 
-	options: where_clause
-		| order_by_clause
+    options: where_clause
+        | order_by_clause
 
-	from_clause: FROM column_table_commalist
+    from_clause: FROM column_table_commalist
 
-	column_table_commalist: column_table
-		| column_table_commalist COMMA column_table
+    column_table_commalist: column_table
+        | column_table_commalist COMMA column_table
 
-	column_table: char_num
-		| char_num PERIOD char_num
+    column_table: char_num
+        | char_num PERIOD char_num
 
-	where_clause: WHERE search_condition
+    where_clause: WHERE search_condition
 
-	search_condition: search_condition AND search_condition
-		| LEFT_PAREN search_condition RIGHT_PAREN
-		| predicate
+    search_condition: search_condition AND search_condition
+        | LEFT_PAREN search_condition RIGHT_PAREN
+        | predicate
 
-	predicate: between_predicate | comparison_predicate
+    predicate: between_predicate | comparison_predicate
 
-	between_predicate: num_word BETWEEN num_word AND num_word
+    between_predicate: num_word BETWEEN num_word AND num_word
 
-	comparison_predicate: num_word comparison num_word
+    comparison_predicate: num_word comparison num_word
 
-	item_commalist: item | item_commalist COMMA item
+    item_commalist: item | item_commalist COMMA item
 
-	item: QUOTE char_num QUOTE
+    item: QUOTE char_num QUOTE
 
-	order_by_clause: ORDER BY order_by_commalist
+    order_by_clause: ORDER BY order_by_commalist
 
-	order_by_commalist: order_by | order_by_commalist COMMA order_by
+    order_by_commalist: order_by | order_by_commalist COMMA order_by
 
-	order_by: column_table asc_desc
+    order_by: column_table asc_desc
 
-	asc_desc: ASC | DESC
+    asc_desc: ASC | DESC
 
-	max_min: MAX | MIN
+    max_min: MAX | MIN
 """
 # CREATE GRAMMAR
 CREATE_SQL_Grammar = """
-	%import common.CNAME
-	%import common.SIGNED_NUMBER
-	%import common.WS
-	%ignore WS
+    %import common.CNAME
+    %import common.SIGNED_NUMBER
+    %import common.WS
+    %ignore WS
     
     start: [create_statement end]
     
@@ -161,10 +161,10 @@ CREATE_SQL_Grammar = """
     INT: "INT"
     FT: "FLOAT"
     VCHR: "VARCHAR" "(" /[0-9]+/ ")"
-	data_type: INT | FT | VCHR
+    data_type: INT | FT | VCHR
 
-	NOTNULL: "NOT NULL"
-	KEY: "PRIMARY KEY"
+    NOTNULL: "NOT NULL"
+    KEY: "PRIMARY KEY"
     field_constraints: NOTNULL | KEY
     
     end:";"
@@ -172,10 +172,10 @@ CREATE_SQL_Grammar = """
 """
 # DROP GRAMMAR
 DROP_SQL_Grammar = """
-	%import common.CNAME
-	%import common.SIGNED_NUMBER
-	%import common.WS
-	%ignore WS
+    %import common.CNAME
+    %import common.SIGNED_NUMBER
+    %import common.WS
+    %ignore WS
     start: [drop_statement end]
 
     drop_statement: "DROP" "TABLE" table_name
@@ -187,13 +187,13 @@ DROP_SQL_Grammar = """
 """
 # UPDATE GRAMMAR
 UPDATE_SQL_Grammar = """
-	%import common.CNAME
-	%import common.SIGNED_NUMBER
-	%import common.WS
-	%ignore WS
+    %import common.CNAME
+    %import common.SIGNED_NUMBER
+    %import common.WS
+    %ignore WS
 
     start: [update_statement end]
-	end: ";"
+    end: ";"
 
     update_statement: "UPDATE" table_name "SET" update_list where_clause?
 
@@ -208,11 +208,11 @@ UPDATE_SQL_Grammar = """
     search_condition: (column_name | new_value) comparison_operator (column_name | new_value)
     
     EQUAL: "="
-	LT: "<"
-	GT: ">"
-	LTE: "<="
-	GTE: ">="
-	comparison_operator: EQUAL | LT | GT | LTE | GTE
+    LT: "<"
+    GT: ">"
+    LTE: "<="
+    GTE: ">="
+    comparison_operator: EQUAL | LT | GT | LTE | GTE
 
     table_name: CNAME
     column_name: CNAME
@@ -221,10 +221,10 @@ UPDATE_SQL_Grammar = """
 """
 # INSERT GRAMMAR
 INSERT_SQL_Grammar = """
-	%import common.CNAME
-	%import common.SIGNED_NUMBER
-	%import common.WS
-	%ignore WS
+    %import common.CNAME
+    %import common.SIGNED_NUMBER
+    %import common.WS
+    %ignore WS
     %import common.ESCAPED_STRING -> STRING
 
     
@@ -250,10 +250,10 @@ INSERT_SQL_Grammar = """
 """
 # DELETE GRAMMAR
 DELETE_SQL_Grammar = """
-	%import common.CNAME
-	%import common.SIGNED_NUMBER
-	%import common.WS
-	%ignore WS
+    %import common.CNAME
+    %import common.SIGNED_NUMBER
+    %import common.WS
+    %ignore WS
     start: [delete_statement end]
     
     delete_statement: "DELETE" "FROM" table_name [where_clause]
@@ -265,11 +265,11 @@ DELETE_SQL_Grammar = """
     condition: column_name comparison_operator value
 
     EQUAL: "="
-	LT: "<"
-	GT: ">"
-	LTE: "<="
-	GTE: ">="
-	comparison_operator: EQUAL | LT | GT | LTE | GTE
+    LT: "<"
+    GT: ">"
+    LTE: "<="
+    GTE: ">="
+    comparison_operator: EQUAL | LT | GT | LTE | GTE
 
     column_name: CNAME
     
@@ -282,523 +282,523 @@ DELETE_SQL_Grammar = """
 """
 
 class SELECT_tree_Evaluator:
-	def __init__(self,grammar,query) -> None:
-		self.parser = Lark(grammar)
-		self.query=query
-		self.result=BeautifulTable()
-		self.datatable = {}
+    def __init__(self,grammar,query) -> None:
+        self.parser = Lark(grammar)
+        self.query=query
+        self.result=BeautifulTable()
+        self.datatable = {}
 
-	def get_result(self,datatable):
-		self.datatable = datatable
-		tree=self.parser.parse(self.query)
-		self.eval_tree(tree)
+    def get_result(self,datatable):
+        self.datatable = datatable
+        tree=self.parser.parse(self.query)
+        self.eval_tree(tree)
 
-		return self.result
+        return self.result
 
-	def apply(self,token):
+    def apply(self,token):
 
-		global asc_desc, max_min, end_flag, all_flag, column_flag, from_flag, where_flag, between_flag, max_min_flag, order_by_flag
+        global asc_desc, max_min, end_flag, all_flag, column_flag, from_flag, where_flag, between_flag, max_min_flag, order_by_flag
 
-		if token == "SELECT":
-			column_flag = True
-		elif token == ";":
-			end_flag = True
-		elif token == "ORDER":
-			order_by_flag = True
-			from_flag = False
-		elif token == "BY":
-			pass
-		elif token == "FROM":
-			from_flag = True
-		elif token == "WHERE":
-			where_flag = True
-		elif token == "BETWEEN":
-			between_flag = True
-		elif token == "AND":
-			pass
-		elif token == "ASC":
-			asc_desc = "ASC"
-		elif token == "DESC":
-			asc_desc = "DESC"
-		elif order_by_flag:
-			if asc_desc != "ASC" and asc_desc != "DESC":
-				order_by_cols.append(token)
-		elif token == "MAX":
-			max_min = "MAX"
-			max_min_flag = True
-		elif token == "MIN":
-			max_min = "MIN"
-			max_min_flag = True
-		elif where_flag:
-			where_items.append(token)
-		elif from_flag:
-			if token.type == "NAME":
-				tables.append(token)
-		elif max_min_flag:
-			max_min_cols.append(token)
-			max_min_flag = False
-			select_cols.append(token)
-		elif column_flag:
-			if token == "*":
-				all_flag = True
-			else:
-				select_cols.append(token)
+        if token == "SELECT":
+            column_flag = True
+        elif token == ";":
+            end_flag = True
+        elif token == "ORDER":
+            order_by_flag = True
+            from_flag = False
+        elif token == "BY":
+            pass
+        elif token == "FROM":
+            from_flag = True
+        elif token == "WHERE":
+            where_flag = True
+        elif token == "BETWEEN":
+            between_flag = True
+        elif token == "AND":
+            pass
+        elif token == "ASC":
+            asc_desc = "ASC"
+        elif token == "DESC":
+            asc_desc = "DESC"
+        elif order_by_flag:
+            if asc_desc != "ASC" and asc_desc != "DESC":
+                order_by_cols.append(token)
+        elif token == "MAX":
+            max_min = "MAX"
+            max_min_flag = True
+        elif token == "MIN":
+            max_min = "MIN"
+            max_min_flag = True
+        elif where_flag:
+            where_items.append(token)
+        elif from_flag:
+            if token.type == "NAME":
+                tables.append(token)
+        elif max_min_flag:
+            max_min_cols.append(token)
+            max_min_flag = False
+            select_cols.append(token)
+        elif column_flag:
+            if token == "*":
+                all_flag = True
+            else:
+                select_cols.append(token)
 
-		if end_flag:
-			if where_flag:
-				if between_flag:
-					matches = {}
-					for name in tables:
-						for key, values in self.datatable.items():
-							between_vals = []
-							if key == where_items[0]:
-								for v in values:
-									for item in where_items[1:]:
-										if item.type == "NUMBER":
-											between_vals.append(int(item))
-										elif item.type == "NAME":
-											between_vals.append(str(item))
-									if between_vals[0] < v < between_vals[1]:
-										if key in matches:
-											matches[key].append(v)
-										else:
-											matches[key] = [v]
+        if end_flag:
+            if where_flag:
+                if between_flag:
+                    matches = {}
+                    for name in tables:
+                        for key, values in self.datatable.items():
+                            between_vals = []
+                            if key == where_items[0]:
+                                for v in values:
+                                    for item in where_items[1:]:
+                                        if item.type == "NUMBER":
+                                            between_vals.append(int(item))
+                                        elif item.type == "NAME":
+                                            between_vals.append(str(item))
+                                    if between_vals[0] < v < between_vals[1]:
+                                        if key in matches:
+                                            matches[key].append(v)
+                                        else:
+                                            matches[key] = [v]
 
-								indices = []
-								for v in values:
-									for match in matches[key]:
-										if v in matches[key]:
-											indices.append(values.index(match))						
-						self.datatable = {k:[elt for ind, elt in enumerate(v) if ind in indices] for k,v in self.datatable.items()}
-				else:
-					temp_cols = []
-					for name in tables:
-						for key, value in self.datatable.items():
-							temp_comps = []
-							temp_vals = []
-							quote_count = 0
-							concat_val = ""
-							for item in where_items:
-								if key == item:
-									temp_cols.append(key)
-								elif item in comparisons:
-									temp_comps.append(item)
-								if item not in temp_cols and item not in temp_comps:
-									if item == "'":
-										quote_count += 1
-									if item.type == "NUMBER":
-										temp_vals.append(int(item))
-									elif item.type == "NAME":
-										temp_vals.append(str(item))
-										if quote_count % 2 != 0:
-											concat_val = " ".join([concat_val, item])
-											temp_vals.remove(item)
-									if quote_count % 2 == 0:
-										temp_vals.append(concat_val)
-										concat_val = ""
+                                indices = []
+                                for v in values:
+                                    for match in matches[key]:
+                                        if v in matches[key]:
+                                            indices.append(values.index(match))						
+                        self.datatable = {k:[elt for ind, elt in enumerate(v) if ind in indices] for k,v in self.datatable.items()}
+                else:
+                    temp_cols = []
+                    for name in tables:
+                        for key, value in self.datatable.items():
+                            temp_comps = []
+                            temp_vals = []
+                            quote_count = 0
+                            concat_val = ""
+                            for item in where_items:
+                                if key == item:
+                                    temp_cols.append(key)
+                                elif item in comparisons:
+                                    temp_comps.append(item)
+                                if item not in temp_cols and item not in temp_comps:
+                                    if item == "'":
+                                        quote_count += 1
+                                    if item.type == "NUMBER":
+                                        temp_vals.append(int(item))
+                                    elif item.type == "NAME":
+                                        temp_vals.append(str(item))
+                                        if quote_count % 2 != 0:
+                                            concat_val = " ".join([concat_val, item])
+                                            temp_vals.remove(item)
+                                    if quote_count % 2 == 0:
+                                        temp_vals.append(concat_val)
+                                        concat_val = ""
 
-						indices = []
-						valid_data = []
-						for col in temp_cols:
-							for sign in temp_comps:
-								for val in temp_vals:
-									if val == "":
-										break
-									elif isinstance(val, str):
-										val = val[1:]
-									for data in self.datatable[col]:
-										if sign == "=":
-											if data == val:
-												valid_data.append(data)
-										if sign == ">":
-											if data > val:
-												valid_data.append(data)
-										if sign == "<":
-											if data < val:
-												valid_data.append(data)
-										if sign == ">=":
-											if data >= val:
-												valid_data.append(data)
-										if sign == "<=":
-											if data <= val:
-												valid_data.append(data)
-							
-								for key, values in self.datatable.items():
-									for v in values:
-										for d in valid_data:
-											if v in valid_data:
-												indices.append(values.index(d))
-											
-						self.datatable = {k:[elt for ind, elt in enumerate(v) if ind in indices] for k,v in self.datatable.items()}
+                        indices = []
+                        valid_data = []
+                        for col in temp_cols:
+                            for sign in temp_comps:
+                                for val in temp_vals:
+                                    if val == "":
+                                        break
+                                    elif isinstance(val, str):
+                                        val = val[1:]
+                                    for data in self.datatable[col]:
+                                        if sign == "=":
+                                            if data == val:
+                                                valid_data.append(data)
+                                        if sign == ">":
+                                            if data > val:
+                                                valid_data.append(data)
+                                        if sign == "<":
+                                            if data < val:
+                                                valid_data.append(data)
+                                        if sign == ">=":
+                                            if data >= val:
+                                                valid_data.append(data)
+                                        if sign == "<=":
+                                            if data <= val:
+                                                valid_data.append(data)
+                            
+                                for key, values in self.datatable.items():
+                                    for v in values:
+                                        for d in valid_data:
+                                            if v in valid_data:
+                                                indices.append(values.index(d))
+                                            
+                        self.datatable = {k:[elt for ind, elt in enumerate(v) if ind in indices] for k,v in self.datatable.items()}
 
-			if order_by_flag:
-				for name in tables:
-					for key in self.datatable.keys():
-						for col in order_by_cols:
-							if key == col:
-								if asc_desc == "ASC":
-									self.datatable[key].sort()
-								elif asc_desc == "DESC":
-									self.datatable[key].sort(reverse=True)
+            if order_by_flag:
+                for name in tables:
+                    for key in self.datatable.keys():
+                        for col in order_by_cols:
+                            if key == col:
+                                if asc_desc == "ASC":
+                                    self.datatable[key].sort()
+                                elif asc_desc == "DESC":
+                                    self.datatable[key].sort(reverse=True)
 
-			if all_flag:
-				for name in tables:
-					for value in self.datatable.values():
-						self.result.columns.append(value)
-					self.result.columns.header = self.datatable.keys()
-				# print(result)
-			else:
-				for name in tables:
-					self.datatable = {k : self.datatable[k] for k in select_cols}
-					index = []
-					if max_min == "MAX":
-						for col in max_min_cols:
-							index.append(self.datatable[col].index(max(self.datatable[col])))
-						self.datatable = {k:[elt for ind, elt in enumerate(v) if ind in index] for k,v in self.datatable.items()}
-					elif max_min == "MIN":
-						for col in max_min_cols:
-							index.append(self.datatable[col].index(min(self.datatable[col])))
-						self.datatable = {k:[elt for ind, elt in enumerate(v) if ind in index] for k,v in self.datatable.items()}
+            if all_flag:
+                for name in tables:
+                    for value in self.datatable.values():
+                        self.result.columns.append(value)
+                    self.result.columns.header = self.datatable.keys()
+                # print(result)
+            else:
+                for name in tables:
+                    self.datatable = {k : self.datatable[k] for k in select_cols}
+                    index = []
+                    if max_min == "MAX":
+                        for col in max_min_cols:
+                            index.append(self.datatable[col].index(max(self.datatable[col])))
+                        self.datatable = {k:[elt for ind, elt in enumerate(v) if ind in index] for k,v in self.datatable.items()}
+                    elif max_min == "MIN":
+                        for col in max_min_cols:
+                            index.append(self.datatable[col].index(min(self.datatable[col])))
+                        self.datatable = {k:[elt for ind, elt in enumerate(v) if ind in index] for k,v in self.datatable.items()}
 
-					for key, value in self.datatable.items():
-						if key in select_cols:
-							self.result.columns.append(value)
-				self.result.columns.header = select_cols
-				# print(result)
+                    for key, value in self.datatable.items():
+                        if key in select_cols:
+                            self.result.columns.append(value)
+                self.result.columns.header = select_cols
+                # print(result)
 
-	def eval_tree(self,tree):
-		if tree.data == "start":
-			self.eval_tree(tree.children[0]) #select_statement
-			self.eval_tree(tree.children[1]) #end
-		elif tree.data == "end":
-			self.apply(tree.children[0]) #SEMICOLON
-		elif tree.data == "select_statement":
-			self.apply(tree.children[0]) #SELECT
-			self.eval_tree(tree.children[1]) #selection
-			self.eval_tree(tree.children[2]) #from clause
-			if len(tree.children) > 3:
-				self.eval_tree(tree.children[3])
-		elif tree.data == "selection":
-			if tree.children[0] == "*":
-				self.apply(tree.children[0]) # (all) *
-			else:
-				self.eval_tree(tree.children[0])
-		elif tree.data == "num_word_commalist":
-			#tree.children[1] 	comma
-			if len(tree.children) == 2:
-				if tree.children[0] != None: #optional max/min
-					self.eval_tree(tree.children[0])
-				self.eval_tree(tree.children[1])
-			else:
-				self.eval_tree(tree.children[0])
-				if tree.children[2] != None: #optional max/min
-					self.eval_tree(tree.children[2])
-				self.eval_tree(tree.children[3])
-		elif tree.data == "num_word":
-			if len(tree.children) == 3:
-				#eval_tree(tree.children[0]) left parenthesis
-				self.eval_tree(tree.children[1])
-				#eval_tree(tree.children[2]) right parenthesis
-			elif len(tree.children) == 1:
-				self.eval_tree(tree.children[0])
-		elif tree.data == "from_clause":
-			self.apply(tree.children[0])
-			self.eval_tree(tree.children[1])
-		elif tree.data == "column_table_commalist":
-			self.eval_tree(tree.children[0])
-		elif tree.data == "column_table":
-			self.eval_tree(tree.children[0])
-		elif tree.data == "char_num":
-			for x in range(len(tree.children)):
-				self.apply(tree.children[x])
-		elif tree.data == "options":
-			self.eval_tree(tree.children[0])
-		elif tree.data == "where_clause":
-			self.apply(tree.children[0]) #WHERE
-			self.eval_tree(tree.children[1]) # search condition
-		elif tree.data == "order_by_clause":
-			self.apply(tree.children[0]) #ORDER
-			self.apply(tree.children[1]) #BY
-			self.eval_tree(tree.children[2]) # order_by_commalist
-		elif tree.data == "search_condition":
-			self.eval_tree(tree.children[0])
-		elif tree.data == "predicate":
-			self.eval_tree(tree.children[0])
-		elif tree.data == "comparison_predicate":
-			self.eval_tree(tree.children[0]) #num_word
-			self.eval_tree(tree.children[1]) #comparison
-			self.eval_tree(tree.children[2])
-		elif tree.data == "comparison":
-			self.apply(tree.children[0])
-		elif tree.data == "between_predicate":
-			self.eval_tree(tree.children[0])
-			self.apply(tree.children[1])
-			self.eval_tree(tree.children[2])
-			self.apply(tree.children[3])
-			self.eval_tree(tree.children[4])
-		elif tree.data == "order_by_commalist":
-			#tree.children[1] 	comma
-			if len(tree.children) == 1:
-				self.eval_tree(tree.children[0])
-			else:
-				self.eval_tree(tree.children[0])
-				self.eval_tree(tree.children[2])
-		elif tree.data == "order_by":
-			self.eval_tree(tree.children[0]) #column_table
-			self.eval_tree(tree.children[1]) #asc_desc
-		elif tree.data == "asc_desc":
-			self.apply(tree.children[0])
-		elif tree.data == "max_min":
-			self.apply(tree.children[0])
-		elif tree.data == "item":
-			self.apply(tree.children[0]) # quote
-			self.eval_tree(tree.children[1])
-			self.apply(tree.children[2]) # quote
-		else:
-			raise SyntaxError('unrecognized tree')
+    def eval_tree(self,tree):
+        if tree.data == "start":
+            self.eval_tree(tree.children[0]) #select_statement
+            self.eval_tree(tree.children[1]) #end
+        elif tree.data == "end":
+            self.apply(tree.children[0]) #SEMICOLON
+        elif tree.data == "select_statement":
+            self.apply(tree.children[0]) #SELECT
+            self.eval_tree(tree.children[1]) #selection
+            self.eval_tree(tree.children[2]) #from clause
+            if len(tree.children) > 3:
+                self.eval_tree(tree.children[3])
+        elif tree.data == "selection":
+            if tree.children[0] == "*":
+                self.apply(tree.children[0]) # (all) *
+            else:
+                self.eval_tree(tree.children[0])
+        elif tree.data == "num_word_commalist":
+            #tree.children[1] 	comma
+            if len(tree.children) == 2:
+                if tree.children[0] != None: #optional max/min
+                    self.eval_tree(tree.children[0])
+                self.eval_tree(tree.children[1])
+            else:
+                self.eval_tree(tree.children[0])
+                if tree.children[2] != None: #optional max/min
+                    self.eval_tree(tree.children[2])
+                self.eval_tree(tree.children[3])
+        elif tree.data == "num_word":
+            if len(tree.children) == 3:
+                #eval_tree(tree.children[0]) left parenthesis
+                self.eval_tree(tree.children[1])
+                #eval_tree(tree.children[2]) right parenthesis
+            elif len(tree.children) == 1:
+                self.eval_tree(tree.children[0])
+        elif tree.data == "from_clause":
+            self.apply(tree.children[0])
+            self.eval_tree(tree.children[1])
+        elif tree.data == "column_table_commalist":
+            self.eval_tree(tree.children[0])
+        elif tree.data == "column_table":
+            self.eval_tree(tree.children[0])
+        elif tree.data == "char_num":
+            for x in range(len(tree.children)):
+                self.apply(tree.children[x])
+        elif tree.data == "options":
+            self.eval_tree(tree.children[0])
+        elif tree.data == "where_clause":
+            self.apply(tree.children[0]) #WHERE
+            self.eval_tree(tree.children[1]) # search condition
+        elif tree.data == "order_by_clause":
+            self.apply(tree.children[0]) #ORDER
+            self.apply(tree.children[1]) #BY
+            self.eval_tree(tree.children[2]) # order_by_commalist
+        elif tree.data == "search_condition":
+            self.eval_tree(tree.children[0])
+        elif tree.data == "predicate":
+            self.eval_tree(tree.children[0])
+        elif tree.data == "comparison_predicate":
+            self.eval_tree(tree.children[0]) #num_word
+            self.eval_tree(tree.children[1]) #comparison
+            self.eval_tree(tree.children[2])
+        elif tree.data == "comparison":
+            self.apply(tree.children[0])
+        elif tree.data == "between_predicate":
+            self.eval_tree(tree.children[0])
+            self.apply(tree.children[1])
+            self.eval_tree(tree.children[2])
+            self.apply(tree.children[3])
+            self.eval_tree(tree.children[4])
+        elif tree.data == "order_by_commalist":
+            #tree.children[1] 	comma
+            if len(tree.children) == 1:
+                self.eval_tree(tree.children[0])
+            else:
+                self.eval_tree(tree.children[0])
+                self.eval_tree(tree.children[2])
+        elif tree.data == "order_by":
+            self.eval_tree(tree.children[0]) #column_table
+            self.eval_tree(tree.children[1]) #asc_desc
+        elif tree.data == "asc_desc":
+            self.apply(tree.children[0])
+        elif tree.data == "max_min":
+            self.apply(tree.children[0])
+        elif tree.data == "item":
+            self.apply(tree.children[0]) # quote
+            self.eval_tree(tree.children[1])
+            self.apply(tree.children[2]) # quote
+        else:
+            raise SyntaxError('unrecognized tree')
 
 class UPDATE_tree_Evaluator:
-	def __init__(self,grammar,query) -> None:
-		self.parser = Lark(grammar)
-		self.query=query
-		self.result=BeautifulTable()
-		self.table_name=None # Name of Table being changed
-		self.update_clause={"cols":[],"vals":[]} # Update clause list
-		self.where_clause={"cols":[],"ops":[],"vals":[]} # Where clause list
+    def __init__(self,grammar,query) -> None:
+        self.parser = Lark(grammar)
+        self.query=query
+        self.result=BeautifulTable()
+        self.table_name=None # Name of Table being changed
+        self.update_clause={"cols":[],"vals":[]} # Update clause list
+        self.where_clause={"cols":[],"ops":[],"vals":[]} # Where clause list
 
-	def get_result(self):
-		tree=self.parser.parse(self.query)
-		self.eval_tree(tree)
-		# TODO to get results
-		print("table to be updated: ",self.table_name)
-		print("update clause: ",self.update_clause)
-		print("where clause: ",self.where_clause)
-		...
-		return self.result
-	
-	def eval_tree(self,tree):
-		if tree.data == "start":
-			self.eval_tree(tree.children[0]) # "update_statement"
-			# "END"
-		elif tree.data == "update_statement":
-			self.table_name=tree.children[0].children[0]
-			self.eval_tree(tree.children[1])
-			if len(tree.children) == 3:
-				self.eval_tree(tree.children[2])
-		
-		# self.update_clause={"cols":[],"vals":[]} 
-		# self.where_clause={"cols":[],"ops":[],"vals":[]} 
-		elif tree.data == "update_list":
-			for child in tree.children:
-				self.eval_tree(child)
+    def get_result(self):
+        tree=self.parser.parse(self.query)
+        self.eval_tree(tree)
+        # TODO to get results
+        print("table to be updated: ",self.table_name)
+        print("update clause: ",self.update_clause)
+        print("where clause: ",self.where_clause)
+        ...
+        return self.result
+    
+    def eval_tree(self,tree):
+        if tree.data == "start":
+            self.eval_tree(tree.children[0]) # "update_statement"
+            # "END"
+        elif tree.data == "update_statement":
+            self.table_name=tree.children[0].children[0]
+            self.eval_tree(tree.children[1])
+            if len(tree.children) == 3:
+                self.eval_tree(tree.children[2])
+        
+        # self.update_clause={"cols":[],"vals":[]} 
+        # self.where_clause={"cols":[],"ops":[],"vals":[]} 
+        elif tree.data == "update_list":
+            for child in tree.children:
+                self.eval_tree(child)
 
-		elif tree.data == "update_clause":
-			self.update_clause["cols"].append(tree.children[0].children[0].value)
-			self.update_clause["vals"].append(int(tree.children[1].children[0].value))
-		elif tree.data=="where_clause":
-			self.eval_tree(tree.children[0])
+        elif tree.data == "update_clause":
+            self.update_clause["cols"].append(tree.children[0].children[0].value)
+            self.update_clause["vals"].append(int(tree.children[1].children[0].value))
+        elif tree.data=="where_clause":
+            self.eval_tree(tree.children[0])
 
-		elif tree.data == "search_condition":
-			self.where_clause["cols"].append(tree.children[0].children[0].value)
-			self.where_clause["ops"].append(tree.children[1].children[0].value)
-			self.where_clause["vals"].append(int(tree.children[2].children[0].value))
-		
-		else:
-			raise ValueError(f"Invalid syntax query")
+        elif tree.data == "search_condition":
+            self.where_clause["cols"].append(tree.children[0].children[0].value)
+            self.where_clause["ops"].append(tree.children[1].children[0].value)
+            self.where_clause["vals"].append(int(tree.children[2].children[0].value))
+        
+        else:
+            raise ValueError(f"Invalid syntax query")
 
 class DROP_tree_Evaluator:
-	def __init__(self,grammar,query) -> None:
-		self.parser = Lark(grammar)
-		self.query=query
-		self.result=BeautifulTable()
-		self.table_name=None # Name of Table being dropped
-		
-	def get_result(self):
-		tree=self.parser.parse(self.query)
-		self.eval_tree(tree)
-		# TODO to get results
-		print("table to be dropped: ",self.table_name)
-		...
-		return self.result
-	
-	def eval_tree(self,tree):
-		if tree.data == "start":
-			self.eval_tree(tree.children[0])
-		elif tree.data == "drop_statement":
-			self.eval_tree(tree.children[0])
-		elif tree.data == "table_name":
-			self.table_name=tree.children[0].value
-		else:
-			raise ValueError(f"Invalid syntax query")
+    def __init__(self,grammar,query) -> None:
+        self.parser = Lark(grammar)
+        self.query=query
+        self.result=BeautifulTable()
+        self.table_name=None # Name of Table being dropped
+        
+    def get_result(self):
+        tree=self.parser.parse(self.query)
+        self.eval_tree(tree)
+        # TODO to get results
+        print("table to be dropped: ",self.table_name)
+        ...
+        return self.result
+    
+    def eval_tree(self,tree):
+        if tree.data == "start":
+            self.eval_tree(tree.children[0])
+        elif tree.data == "drop_statement":
+            self.eval_tree(tree.children[0])
+        elif tree.data == "table_name":
+            self.table_name=tree.children[0].value
+        else:
+            raise ValueError(f"Invalid syntax query")
 
 class INSERT_tree_Evaluator:
-	def __init__(self,grammar,query) -> None:
-		self.parser = Lark(grammar)
-		self.query=query
-		self.result=BeautifulTable()
-		self.table_name=None # Name of Table being inserted
-		self.insert_cols=[]
-		self.insert_vals=[]
-	
-	def get_result(self):
-		tree=self.parser.parse(self.query)
-		self.eval_tree(tree)
-		# TODO to get results
-		print("table to be inserted: ",self.table_name)
-		print("insert columns: ",self.insert_cols)
-		print("insert valuse: ",self.insert_vals)
-		
-		return self.result
-	
-	def eval_tree(self,tree):
-		if tree.data == "start":
-			self.eval_tree(tree.children[0])
-		elif tree.data == "insert_statement":
-			self.table_name=tree.children[0].children[0].value # YUNI: 加了.value
-			self.eval_tree(tree.children[1]) # column_name_commalist
-			self.eval_tree(tree.children[2]) # value_commalist
-		elif tree.data == "column_name_commalist":
-			if len(tree.children)==1:
-				self.insert_cols.append(tree.children[0].children[0].value)
-			else:
-				self.eval_tree(tree.children[0])
-				for child in tree.children[1:]:
-					self.insert_cols.append(child.children[0].value)
-		
-		elif tree.data == "value_commalist":
-			if len(tree.children)==1:
-				self.insert_vals.append(tree.children[0].children[0].value)
-			else:
-				self.eval_tree(tree.children[0])
-				for child in tree.children[1:]:
-					self.insert_vals.append(child.children[0].value)
-		else:
-			raise ValueError(f"Invalid syntax query")
-		
+    def __init__(self,grammar,query) -> None:
+        self.parser = Lark(grammar)
+        self.query=query
+        self.result=BeautifulTable()
+        self.table_name=None # Name of Table being inserted
+        self.insert_cols=[]
+        self.insert_vals=[]
+    
+    def get_result(self):
+        tree=self.parser.parse(self.query)
+        self.eval_tree(tree)
+        # TODO to get results
+        print("table to be inserted: ",self.table_name)
+        print("insert columns: ",self.insert_cols)
+        print("insert valuse: ",self.insert_vals)
+        
+        return self.result
+    
+    def eval_tree(self,tree):
+        if tree.data == "start":
+            self.eval_tree(tree.children[0])
+        elif tree.data == "insert_statement":
+            self.table_name=tree.children[0].children[0].value # YUNI: 加了.value
+            self.eval_tree(tree.children[1]) # column_name_commalist
+            self.eval_tree(tree.children[2]) # value_commalist
+        elif tree.data == "column_name_commalist":
+            if len(tree.children)==1:
+                self.insert_cols.append(tree.children[0].children[0].value)
+            else:
+                self.eval_tree(tree.children[0])
+                for child in tree.children[1:]:
+                    self.insert_cols.append(child.children[0].value)
+        
+        elif tree.data == "value_commalist":
+            if len(tree.children)==1:
+                self.insert_vals.append(tree.children[0].children[0].value)
+            else:
+                self.eval_tree(tree.children[0])
+                for child in tree.children[1:]:
+                    self.insert_vals.append(child.children[0].value)
+        else:
+            raise ValueError(f"Invalid syntax query")
+        
 class DELETE_tree_Evaluator:
-	def __init__(self,grammar,query) -> None:
-		self.parser = Lark(grammar)
-		self.query=query
-		self.result=BeautifulTable()
-		self.table_name=None # Name of Table being delete
-		self.where_clause={"cols":[],"ops":[],"vals":[]} # Where clause list
-	
-	def get_result(self):
-		tree=self.parser.parse(self.query)
-		self.eval_tree(tree)
-		# TODO to get results
-		print("table to be delete: ",self.table_name)
-		print("where clause: ",self.where_clause)
+    def __init__(self,grammar,query) -> None:
+        self.parser = Lark(grammar)
+        self.query=query
+        self.result=BeautifulTable()
+        self.table_name=None # Name of Table being delete
+        self.where_clause={"cols":[],"ops":[],"vals":[]} # Where clause list
+    
+    def get_result(self):
+        tree=self.parser.parse(self.query)
+        self.eval_tree(tree)
+        # TODO to get results
+        print("table to be delete: ",self.table_name)
+        print("where clause: ",self.where_clause)
 
-		...
-		return self.result
-	
-	def eval_tree(self,tree):
-		if tree.data == "start":
-			self.eval_tree(tree.children[0])
-		elif tree.data == "delete_statement":
-			self.eval_tree(tree.children[0])
-			self.eval_tree(tree.children[1])
-		elif tree.data == "table_name":
-			self.table_name=tree.children[0].value
-		elif tree.data == "where_clause":
-			self.eval_tree(tree.children[0]) # condition
-		elif tree.data == "condition":
-			self.where_clause["cols"].append(tree.children[0].children[0].value)
-			self.where_clause["ops"].append(tree.children[1].children[0].value)
-			self.where_clause["vals"].append(tree.children[2].children[0].value)
-		else:
-			raise ValueError(f"Invalid syntax query")
-		
+        ...
+        return self.result
+    
+    def eval_tree(self,tree):
+        if tree.data == "start":
+            self.eval_tree(tree.children[0])
+        elif tree.data == "delete_statement":
+            self.eval_tree(tree.children[0])
+            self.eval_tree(tree.children[1])
+        elif tree.data == "table_name":
+            self.table_name=tree.children[0].value
+        elif tree.data == "where_clause":
+            self.eval_tree(tree.children[0]) # condition
+        elif tree.data == "condition":
+            self.where_clause["cols"].append(tree.children[0].children[0].value)
+            self.where_clause["ops"].append(tree.children[1].children[0].value)
+            self.where_clause["vals"].append(tree.children[2].children[0].value)
+        else:
+            raise ValueError(f"Invalid syntax query")
+        
 class CREATE_tree_Evaluator:
-	def __init__(self,grammar,query) -> None:
-		self.parser = Lark(grammar)
-		self.query=query
-		self.result=BeautifulTable()
-		self.table_name=None # Name of Table being create
-		self.attributes_clause={"names":[],"data_type":[],"constraints":[]} # Where clause list
-	def get_result(self):
-		tree=self.parser.parse(self.query)
-		self.eval_tree(tree)
-		# TODO to get results
-		print("table to be delete: ",self.table_name)
-		print("attributes clause: ",self.attributes_clause)
-		...
-		return self.result
-	def eval_tree(self,tree):
-		if tree.data == "start":
-			self.eval_tree(tree.children[0]) # create_statement
-		elif tree.data == "create_statement":
-			self.table_name=tree.children[0].children[0] # table_name
-			self.eval_tree(tree.children[1]) # field_list
-		elif tree.data == "field_list":
-			for child in tree.children:
-				self.eval_tree(child) # field definition
-		elif tree.data == "field_definition":
-			self.attributes_clause["names"].append(tree.children[0].children[0].value)
-			self.attributes_clause["data_type"].append(tree.children[1].children[0].value)
-			if len(tree.children)==2:
-				self.attributes_clause["constraints"].append("None")
-			elif len(tree.children)==3:
-				self.attributes_clause["constraints"].append(tree.children[2].children[0].value)
+    def __init__(self,grammar,query) -> None:
+        self.parser = Lark(grammar)
+        self.query=query
+        self.result=BeautifulTable()
+        self.table_name=None # Name of Table being create
+        self.attributes_clause={"names":[],"data_type":[],"constraints":[]} # Where clause list
+    def get_result(self):
+        tree=self.parser.parse(self.query)
+        self.eval_tree(tree)
+        # TODO to get results
+        print("table to be delete: ",self.table_name)
+        print("attributes clause: ",self.attributes_clause)
+        ...
+        return self.result
+    def eval_tree(self,tree):
+        if tree.data == "start":
+            self.eval_tree(tree.children[0]) # create_statement
+        elif tree.data == "create_statement":
+            self.table_name=tree.children[0].children[0] # table_name
+            self.eval_tree(tree.children[1]) # field_list
+        elif tree.data == "field_list":
+            for child in tree.children:
+                self.eval_tree(child) # field definition
+        elif tree.data == "field_definition":
+            self.attributes_clause["names"].append(tree.children[0].children[0].value)
+            self.attributes_clause["data_type"].append(tree.children[1].children[0].value)
+            if len(tree.children)==2:
+                self.attributes_clause["constraints"].append("None")
+            elif len(tree.children)==3:
+                self.attributes_clause["constraints"].append(tree.children[2].children[0].value)
 
-		else:
-			raise ValueError(f"Invalid syntax query")
+        else:
+            raise ValueError(f"Invalid syntax query")
 
 
-		
+        
 if __name__=='__main__':
     # 1. select grammar
-	# 0410 tested
+    # 0410 tested
 
-	mySystem=System()
-	mySystem.open_database('CLASS')
-	select_query = "SELECT * FROM name_age WHERE age < 18;"
-	SELECT_SQL_EVALUATOR=SELECT_tree_Evaluator(SELECT_SQL_Grammar,select_query)
-	print(SELECT_SQL_EVALUATOR.get_result(datatable=mySystem.get_data("name_age")))
+    mySystem=System()
+    mySystem.open_database('CLASS')
+    select_query = "SELECT * FROM name_age WHERE age < 18;"
+    SELECT_SQL_EVALUATOR=SELECT_tree_Evaluator(SELECT_SQL_Grammar,select_query)
+    print(SELECT_SQL_EVALUATOR.get_result(datatable=mySystem.get_data("name_age")))
 
     
-	# 2. create grammar
-	create_query = """
+    # 2. create grammar
+    create_query = """
     CREATE TABLE customers (
     id INT PRIMARY KEY,
     name VARCHAR(50) NOT NULL,
     age INT,
     email VARCHAR(100) NOT NULL
-	);
+    );
     """
-	CREATE_SQL_EVALUATOR=CREATE_tree_Evaluator(CREATE_SQL_Grammar,create_query)
-	print(CREATE_SQL_EVALUATOR.get_result())
+    CREATE_SQL_EVALUATOR=CREATE_tree_Evaluator(CREATE_SQL_Grammar,create_query)
+    print(CREATE_SQL_EVALUATOR.get_result())
 
-	# 3. drop grammar
-	# 0410 tested
-	drop_query="DROP TABLE mybook;"
-	DROP_SQL_EVALUATOR=DROP_tree_Evaluator(DROP_SQL_Grammar,drop_query)
-	print(DROP_SQL_EVALUATOR.get_result())
+    # 3. drop grammar
+    # 0410 tested
+    drop_query="DROP TABLE mybook;"
+    DROP_SQL_EVALUATOR=DROP_tree_Evaluator(DROP_SQL_Grammar,drop_query)
+    print(DROP_SQL_EVALUATOR.get_result())
 
-	# 4. update grammar
-	# 0410 tested
-	update_query="UPDATE my_table SET column1 = 5, column2 = 3 WHERE column3 >= 10;"
-	UPDATE_SQL_EVALUATOR=UPDATE_tree_Evaluator(UPDATE_SQL_Grammar,update_query)
-	print(UPDATE_SQL_EVALUATOR.get_result())
+    # 4. update grammar
+    # 0410 tested
+    update_query="UPDATE my_table SET column1 = 5, column2 = 3 WHERE column3 >= 10;"
+    UPDATE_SQL_EVALUATOR=UPDATE_tree_Evaluator(UPDATE_SQL_Grammar,update_query)
+    print(UPDATE_SQL_EVALUATOR.get_result())
 
     
-	# INSERT grammar
-	# 0410 tested
-	insert_query="INSERT INTO name_age (name, age) VALUES ('John', 30);"
-	INSERT_SQL_EVALUATOR=INSERT_tree_Evaluator(INSERT_SQL_Grammar,insert_query)
-	print(INSERT_SQL_EVALUATOR.get_result())
-	
-	data = {}
-	for i,column in enumerate(INSERT_SQL_EVALUATOR.insert_cols):
-		data[column] = INSERT_SQL_EVALUATOR.insert_vals[i]
-	print(data)
-	mySystem.insert_data(INSERT_SQL_EVALUATOR.table_name,data)
+    # INSERT grammar
+    # 0410 tested
+    insert_query="INSERT INTO name_age (name, age) VALUES ('John', 30);"
+    INSERT_SQL_EVALUATOR=INSERT_tree_Evaluator(INSERT_SQL_Grammar,insert_query)
+    print(INSERT_SQL_EVALUATOR.get_result())
+    
+    data = {}
+    for i,column in enumerate(INSERT_SQL_EVALUATOR.insert_cols):
+        data[column] = INSERT_SQL_EVALUATOR.insert_vals[i]
+    print(data)
+    mySystem.insert_data(INSERT_SQL_EVALUATOR.table_name,data)
 
 
-	# DELETE grammar
-	# 0410 tested
-	delete_query="DELETE FROM customers WHERE age < 18;"
-	DELETE_SQL_EVALUATOR=DELETE_tree_Evaluator(DELETE_SQL_Grammar,delete_query)
-	print(DELETE_SQL_EVALUATOR.get_result())
+    # DELETE grammar
+    # 0410 tested
+    delete_query="DELETE FROM customers WHERE age < 18;"
+    DELETE_SQL_EVALUATOR=DELETE_tree_Evaluator(DELETE_SQL_Grammar,delete_query)
+    print(DELETE_SQL_EVALUATOR.get_result())
 
