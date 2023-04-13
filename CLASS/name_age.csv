@@ -2,5 +2,9 @@ name,age
 yuni,13
 suzy,14
 John,30
+<<<<<<< HEAD
 John,30
 John,30
+=======
+Lesley,10
+>>>>>>> 0ba3f69a72472d3c88cb61a92e7e9a285414cc8c
