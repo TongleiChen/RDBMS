@@ -781,9 +781,9 @@ if __name__=='__main__':
     # 2. create grammar
     create_query = """
     CREATE TABLE customers (
-    id INT FOREIGN KEY,
+    id INT PRIMARY KEY,
     name VARCHAR(50) NOT NULL,
-    age INT,
+    age INT PRIMARY KEY,
     email VARCHAR(100) NOT NULL
     );
     """

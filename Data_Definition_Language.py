@@ -132,6 +132,11 @@ class System:
 
         return
     
+    def create_table_dict(self,relation_name:str,attribute:dict):
+        # TODO
+        
+        return
+
 
 
     def Drop_Table(self,relation_name):
