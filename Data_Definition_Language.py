@@ -14,6 +14,7 @@ class System:
         self.columns_filepath = None
         self.table_path = {}
         self.table_attributes= {}
+        self.database_tables = {}
 
     
     def Create_Database(self,database_name):
@@ -67,7 +68,11 @@ class System:
 
         print(self.table_attributes)
         # print(self.table_path)
-        return
+        for table in self.table_path.keys():
+            print(table)
+            self.database_tables[table] = self.get_data(table)
+        return self.database_tables
+    
     def Drop_Database(self):
         # YUNI: 0408 Tested
         if os.path.isdir('./' + self.database_name):
@@ -172,28 +177,61 @@ class System:
     
 
 
-    def insert_data(self,relation_name,data:dict):
-        # TODO: 
-        # Check duplicates 
-        # YUNI: 是在这里check还是在到这里之前check比较好？？
-        current_table_path = self.table_path[relation_name]
-        attribute_list = self.table_attributes[relation_name]
-        data_list = []
-        for attri in attribute_list:
-            print(attri)
-            data_list.append(data[attri[0]])
+    # def insert_data(self,relation_name,data:dict):
+    #     # TODO: 
+    #     # Check duplicates 
+    #     # YUNI: 是在这里check还是在到这里之前check比较好？？
+    #     current_table_path = self.table_path[relation_name]
+    #     attribute_list = self.table_attributes[relation_name]
+    #     data_list = []
+    #     for attri in attribute_list:
+    #         print(attri)
+    #         data_list.append(data[attri[0]])
 
         
-        with open(current_table_path,'r+') as f_t:
-            f_t.seek(0,2)
-            f_t.write(",".join(map(str, data_list))+"\n")
+    #     with open(current_table_path,'r+') as f_t:
+    #         f_t.seek(0,2)
+    #         f_t.write(",".join(map(str, data_list))+"\n")
 
-        print("INSERT SUCCESSFULLY. ")
+    #     print("INSERT SUCCESSFULLY. ")
+    #     return
+    def insert_data(self,relation_name,insert_cols,insert_vals):
+
+
+        # check duplicates
+
+        primary_key_list = self.find_primary_key()
+        for i,column in enumerate(insert_cols):
+            if column in primary_key_list:
+                try_insert_list = self.database_tables[relation_name][column]
+                try_insert_list.append(insert_vals[i])
+                if self.check_duplicates(try_insert_list) == True:
+                    print("Insertion ERROR: There exists DUPLICATES. ")
+                    return
+        
+        for i,column in enumerate(insert_cols):
+            self.database_tables[relation_name][column].append(insert_vals[i])
+        
         return
+
+    def find_primary_key(self,relation_name):
+        primary_key = []
+        for attr in self.table_attributes[relation_name]:#name,type,primary key
+            if attr[2] == 'True':
+                primary_key.append(attr[0])
+        return primary_key
+    
+    def check_duplicates(self,primary_column_list):
+        # return False -> no duplicates
+        # return True -> has duplicates
+        if len(primary_column_list) == len(set(primary_column_list)):
+            return False
+        else:
+            return True
+        
 
     def delete_data(self,relation_name,data_pos):
         # YUNI: 0408 Tested
-        # YUNI: 搞不懂我自己为什么不直接把整个table更新完丢进去. 征求lzx建议. update_data 也是
         current_table_path = self.table_path[relation_name]
         new_data = []
         with open(current_table_path,"r") as f:
@@ -237,44 +275,62 @@ class System:
             f.writelines(new_data)
         
         return
+    
+
     def update_data(self,relation_name,update_dict:dict,where_dict:dict):
 
         # TODO: Check duplicates
-        database_table = self.get_data(relation_name)
+
+        # database_table = self.get_data(relation_name)
         table_attri = self.get_column_list(relation_name)
 
-        total_number_row = len(database_table[table_attri[0]])
+        total_number_row = len(self.database_tables[relation_name][table_attri[0]])
         match_flag = False
         where_col = where_dict['cols']
         where_val = where_dict['vals']
         where_op = where_dict['ops']
+        update_row_list = []
         for i in range(total_number_row):
             if where_op == "=":
 
-                if database_table[where_col][i] == where_val:
+                if self.database_tables[relation_name][where_col][i] == where_val:
                     match_flag = True
 
             if where_op == ">":
-                if database_table[where_col][i] > where_val:
+                if self.database_tables[relation_name][where_col][i] > where_val:
                     match_flag = True
 
 
             if where_op == ">=":
-                if database_table[where_col][i] >= where_val:
+                if self.database_tables[relation_name][where_col][i] >= where_val:
                     match_flag = True
 
 
             if where_op == "<":
-                if database_table[where_col][i] < where_val:
+                if self.database_tables[relation_name][where_col][i] < where_val:
                     match_flag = True
 
             if where_op == "<=":
-                if database_table[where_col][i] <= where_val:
+                if self.database_tables[relation_name][where_col][i] <= where_val:
                     match_flag = True
             
             if match_flag == True:
-                for j,column in enumerate(update_dict['cols']):
-                    database_table[column][i] = update_dict['vals'][j]
+                update_row_list.append(i)
+        
+        primary_key_list = self.find_primary_key()
+        for check_i,column in enumerate(update_dict['cols']):
+            if column in primary_key_list:
+                try_insert_list = self.database_tables[relation_name][column]
+                for row_idx in update_row_list:
+                    try_insert_list[row_idx] = update_dict['vals'][check_i]
+                
+                if self.check_duplicates(try_insert_list) == True:
+                    print("Insertion ERROR: There exists DUPLICATES. ")
+                    return
+        for j,column in enumerate(update_dict['cols']):
+            self.database_tables[relation_name][column][i] = update_dict['vals'][j]
+            
+        return
         
 
 
@@ -322,6 +378,7 @@ class System:
             for data_line in f.readlines():
                 data_line = data_line.strip('\n')
                 data_in_table.append(data_line.split(","))
+        print(data_in_table)
         data_dict = {}
         for i,column in enumerate(data_attributes):
             data_dict[column] = []
@@ -351,7 +408,8 @@ if __name__=='__main__':
     # # A1=ATTRIBUTE(*['animal_name','STR',0,True])
     # # A2=ATTRIBUTE(*['animal_age','INT',1,False])
     
-    mySystem.open_database('CLASS')
+    print(mySystem.open_database('CLASS'))
+    print(mySystem.find_primary_key('name_height'))
     # mySystem.delete_data('name_age',0)
     # mySystem.Create_Table('name_age',[['name','String',True],['age','INT',False]])
     # mySystem.Create_Table('name_height',[['name','String',True],['height','INT',False]])
@@ -362,16 +420,17 @@ if __name__=='__main__':
     # mySystem.update_data('name_age',1,data)
     # data = {"name": "suzy","height":170}
     # mySystem.insert_data('name_height',data)
-    table_name_age = mySystem.get_data('name_age')
-    print(table_name_age)
-    table_name_age['name'].append('Lesley')
-    table_name_age['age'].append(10)
-    print(table_name_age)
-    mySystem.overwrite_data("name_age",table_name_age)
+    # table_name_age = mySystem.get_data('name_age')
+    # print(table_name_age)
+    # table_name_age['name'].append('Lesley')
+    # table_name_age['age'].append(10)
+    # print(table_name_age)
+    # mySystem.overwrite_data("name_age",table_name_age)
 
     # print(mySystem.get_data('name_height'))
     # mySystem.Drop_Table('name_age') 
     # mySystem.Drop_Database()
+    # mySystem.open_databa
 
 
 

@@ -32,10 +32,11 @@ select_cols = []
 tables = []
 where_items = []
 max_min_cols = []
+sum_cols = []
 order_by_cols = []
 asc_desc = ""
 max_min = ""
-
+sum_ = ""
 end_flag = False
 all_flag = False
 from_flag = False
@@ -45,10 +46,13 @@ between_flag = False
 max_min_flag = False
 order_by_flag = False
 sum_flag = False
+and_flag = False
 # result = BeautifulTable()
 # end: database for testing
 
 # SELECT GRAMMAR
+# TODO 语法缺少HAVING join
+# TODO 目前只支持where后面只有一个condition
 SELECT_SQL_Grammar = """
     %import common.CNAME
     %import common.SIGNED_NUMBER
@@ -73,6 +77,7 @@ SELECT_SQL_Grammar = """
 
     ALL: "*"
     AND: "AND"i
+    OR: "OR"i
     ASC: "ASC"i
     BETWEEN: "BETWEEN"i
     BY: "BY"i
@@ -120,6 +125,7 @@ SELECT_SQL_Grammar = """
     where_clause: WHERE search_condition
 
     search_condition: search_condition AND search_condition
+        | search_condition OR search_condition
         | LEFT_PAREN search_condition RIGHT_PAREN
         | predicate
 
@@ -305,12 +311,10 @@ class SELECT_tree_Evaluator:
 
     def apply(self,token):
 
-        global asc_desc, max_min, end_flag, all_flag, column_flag, from_flag, where_flag, between_flag, max_min_flag, order_by_flag, sum_flag
+        global asc_desc, max_min, end_flag, all_flag, column_flag, from_flag, where_flag, between_flag, max_min_flag, order_by_flag, sum_flag,sum_,and_flag
         
         if token == "SELECT":
             column_flag = True
-        elif token == "SUM":
-            sum_flag == True
         elif token == ";":
             end_flag = True
         elif token == "ORDER":
@@ -325,7 +329,8 @@ class SELECT_tree_Evaluator:
         elif token == "BETWEEN":
             between_flag = True
         elif token == "AND":
-            pass
+            and_flag = True
+        
         elif token == "ASC":
             asc_desc = "ASC"
         elif token == "DESC":
@@ -339,8 +344,11 @@ class SELECT_tree_Evaluator:
         elif token == "MIN":
             max_min = "MIN"
             max_min_flag = True
+        elif token == "SUM":
+            sum_="SUM"
+            sum_flag == True
         elif where_flag:
-            where_items.append(token)
+            where_items.append(token) 
         elif from_flag:
             if token.type == "NAME":
                 tables.append(token)
@@ -348,12 +356,17 @@ class SELECT_tree_Evaluator:
             max_min_cols.append(token)
             max_min_flag = False
             select_cols.append(token)
+        elif sum_flag:
+            sum_cols.append(token)
+            sum_flag=False
+            select_cols.append(token)
         elif column_flag:
             if token == "*":
                 all_flag = True
             else:
                 select_cols.append(token)
 
+        print(where_items)
         if end_flag:
             if where_flag:
                 if between_flag:
@@ -381,9 +394,11 @@ class SELECT_tree_Evaluator:
                                             indices.append(values.index(match))						
                         self.datatable = {k:[elt for ind, elt in enumerate(v) if ind in indices] for k,v in self.datatable.items()}
                 else:
+                    # no between and 
                     temp_cols = []
                     for name in tables:
                         for key, value in self.datatable.items():
+                            # print(key,value)
                             temp_comps = []
                             temp_vals = []
                             quote_count = 0
@@ -409,36 +424,117 @@ class SELECT_tree_Evaluator:
 
                         indices = []
                         valid_data = []
-                        for col in temp_cols:
-                            for sign in temp_comps:
-                                for val in temp_vals:
-                                    if val == "":
-                                        break
-                                    elif isinstance(val, str):
-                                        val = val[1:]
-                                    for data in self.datatable[col]:
-                                        if sign == "=":
-                                            if data == val:
-                                                valid_data.append(data)
-                                        if sign == ">":
-                                            if data > val:
-                                                valid_data.append(data)
-                                        if sign == "<":
-                                            if data < val:
-                                                valid_data.append(data)
-                                        if sign == ">=":
-                                            if data >= val:
-                                                valid_data.append(data)
-                                        if sign == "<=":
-                                            if data <= val:
-                                                valid_data.append(data)
-                            
-                                for key, values in self.datatable.items():
-                                    for v in values:
-                                        for d in valid_data:
-                                            if v in valid_data:
-                                                indices.append(values.index(d))
-                                            
+                        print(temp_cols)
+                        print(temp_comps)
+                        print(temp_vals)
+                        if len(temp_cols)==1: 
+                            # WHERE condition
+                            for col in temp_cols:
+                                for sign in temp_comps:
+                                    for val in temp_vals:
+                                        if val == "":
+                                            break
+                                        elif isinstance(val, str):
+                                            val = val[1:]
+                                        for data in self.datatable[col]:
+                                            print(data,val)
+                                            if sign == "=":
+                                                if data == val:
+                                                    valid_data.append(data)
+                                            if sign == ">":
+                                                if data > val:
+                                                    valid_data.append(data)
+                                            if sign == "<":
+                                                if data < val:
+                                                    valid_data.append(data)
+                                            if sign == ">=":
+                                                if data >= val:
+                                                    valid_data.append(data)
+                                            if sign == "<=":
+                                                if data <= val:
+                                                    valid_data.append(data)
+                                
+                                    for key, values in self.datatable.items():
+                                        for v in values:
+                                            for d in valid_data:
+                                                if v in valid_data:
+                                                    indices.append(values.index(d))
+                        elif len(temp_cols)>1 and and_flag:
+                            # WHERE condition1 AND condition2
+                            temp_cols1=temp_cols[:len(temp_cols)//2]
+                            temp_cols2=[x for x in temp_cols if x not in temp_cols1]
+                            print(temp_cols1,temp_cols2)
+
+                            temp_comps1=temp_comps[:len(temp_comps)//2]
+                            temp_comps2=[x for x in temp_comps if x not in temp_comps1]
+                            print(temp_comps1,temp_comps2)
+
+                            temp_vals1=temp_vals[:len(temp_vals)//2]
+                            temp_vals2=[x for x in temp_vals if x not in temp_vals1]
+                            print(temp_vals1,temp_vals2)
+
+                            for col in temp_cols1:
+                                for sign in temp_comps1:
+                                    for val in temp_vals1:
+                                        if val == "":
+                                            break
+                                        elif isinstance(val, str):
+                                            val = val[1:]
+                                        for data in self.datatable[col]:
+                                            print(data,val)
+                                            if sign == "=":
+                                                if data == val:
+                                                    valid_data.append(data)
+                                            if sign == ">":
+                                                if data > val:
+                                                    valid_data.append(data)
+                                            if sign == "<":
+                                                if data < val:
+                                                    valid_data.append(data)
+                                            if sign == ">=":
+                                                if data >= val:
+                                                    valid_data.append(data)
+                                            if sign == "<=":
+                                                if data <= val:
+                                                    valid_data.append(data)
+                                
+                                    for key, values in self.datatable.items():
+                                        for v in values:
+                                            for d in valid_data:
+                                                if v in valid_data:
+                                                    indices.append(values.index(d))
+                        
+                            for col in temp_cols2:
+                                for sign in temp_comps2:
+                                    for val in temp_vals2:
+                                        if val == "":
+                                            break
+                                        elif isinstance(val, str):
+                                            val = val[1:]
+                                        for data in self.datatable[col]:
+                                            print(data,val)
+                                            if sign == "=":
+                                                if data == val:
+                                                    valid_data.append(data)
+                                            if sign == ">":
+                                                if data > val:
+                                                    valid_data.append(data)
+                                            if sign == "<":
+                                                if data < val:
+                                                    valid_data.append(data)
+                                            if sign == ">=":
+                                                if data >= val:
+                                                    valid_data.append(data)
+                                            if sign == "<=":
+                                                if data <= val:
+                                                    valid_data.append(data)
+                                
+                                    for key, values in self.datatable.items():
+                                        for v in values:
+                                            for d in valid_data:
+                                                if v in valid_data:
+                                                    indices.append(values.index(d))
+                        
                         self.datatable = {k:[elt for ind, elt in enumerate(v) if ind in indices] for k,v in self.datatable.items()}
 
             if order_by_flag:
@@ -469,10 +565,15 @@ class SELECT_tree_Evaluator:
                         for col in max_min_cols:
                             index.append(self.datatable[col].index(min(self.datatable[col])))
                         self.datatable = {k:[elt for ind, elt in enumerate(v) if ind in index] for k,v in self.datatable.items()}
-
+                    elif sum_=="SUM":
+                        for key, value in self.datatable.items():
+                            new_value=[sum(value)]
+                            self.datatable[key]=new_value
+                            break
                     for key, value in self.datatable.items():
                         if key in select_cols:
                             self.result.columns.append(value)
+                
                 self.result.columns.header = select_cols
                 # print(result)
 
@@ -531,8 +632,16 @@ class SELECT_tree_Evaluator:
             self.apply(tree.children[0]) #ORDER
             self.apply(tree.children[1]) #BY
             self.eval_tree(tree.children[2]) # order_by_commalist
-        elif tree.data == "search_condition":
-            self.eval_tree(tree.children[0])
+        elif tree.data == "search_condition": 
+            if len(tree.children)==1:
+                self.eval_tree(tree.children[0]) 
+            else:
+                for child in tree.children:
+                    if child=="AND":
+                        self.apply(child) # AND
+                    else:
+                        self.eval_tree(child)
+
         elif tree.data == "predicate":
             self.eval_tree(tree.children[0])
         elif tree.data == "comparison_predicate":
@@ -607,14 +716,14 @@ class UPDATE_tree_Evaluator:
 
         elif tree.data == "update_clause":
             self.update_clause["cols"].append(tree.children[0].children[0].value)
-            self.update_clause["vals"].append(int(tree.children[1].children[0].value))
+            self.update_clause["vals"].append(tree.children[1].children[0].value)
         elif tree.data=="where_clause":
             self.eval_tree(tree.children[0])
 
         elif tree.data == "search_condition":
             self.where_clause["cols"].append(tree.children[0].children[0].value)
             self.where_clause["ops"].append(tree.children[1].children[0].value)
-            self.where_clause["vals"].append(int(tree.children[2].children[0].value))
+            self.where_clause["vals"].append(tree.children[2].children[0].value)
         
         else:
             raise ValueError(f"Invalid syntax query")
@@ -772,8 +881,8 @@ if __name__=='__main__':
 
     mySystem=System()
     mySystem.open_database('CLASS')
-    select_query = "SELECT SUM(age) FROM name_age WHERE age < 18;"
-    #select_query = "SELECT MAX(age) FROM name_age WHERE age < 18;"
+    select_query = "SELECT age FROM name_age WHERE age < 18;" #where的顺序只能跟列表的顺序一致：
+    #select_query = "SELECT MAX(age) FROM name_age WHERE name = suzy AND age < 18;"
     SELECT_SQL_EVALUATOR=SELECT_tree_Evaluator(SELECT_SQL_Grammar,select_query)
     print(SELECT_SQL_EVALUATOR.get_result(datatable=mySystem.get_data("name_age")))
 
@@ -798,7 +907,7 @@ if __name__=='__main__':
 
     # 4. update grammar
     # 0410 tested
-    update_query="UPDATE my_table SET column1 = 5, column2 = 3 WHERE column3 >= 10;"
+    update_query="UPDATE my_table SET column1 = suzy, column2 = 3 WHERE column3 >= 10;"
     UPDATE_SQL_EVALUATOR=UPDATE_tree_Evaluator(UPDATE_SQL_Grammar,update_query)
     print(UPDATE_SQL_EVALUATOR.get_result())
 
@@ -821,3 +930,15 @@ if __name__=='__main__':
     delete_query="DELETE FROM customers WHERE age < 18 CASCADE;"
     DELETE_SQL_EVALUATOR=DELETE_tree_Evaluator(DELETE_SQL_Grammar,delete_query)
     print(DELETE_SQL_EVALUATOR.get_result())
+
+
+
+    # update_query_2 = "UPDATE name_height SET height = 160 WHERE name = 'suzy';"
+    # UPDATE_SQL_EVALUATOR_2=UPDATE_tree_Evaluator(UPDATE_SQL_Grammar,update_query_2)
+    # DELETE_SQL_EVALUATOR.get_result()
+    # mySystem.update_data(UPDATE_SQL_EVALUATOR_2.table_name,UPDATE_SQL_EVALUATOR_2.update_clause,UPDATE_SQL_EVALUATOR_2.where_clause)
+    # print(mySystem.database_tables)
+
+    # update_query="UPDATE name_height SET name = 'suzy' WHERE column3 = 10;"
+    # UPDATE_SQL_EVALUATOR=UPDATE_tree_Evaluator(UPDATE_SQL_Grammar,update_query)
+    # print(UPDATE_SQL_EVALUATOR.get_result())
