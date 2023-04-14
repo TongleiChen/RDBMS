@@ -1,6 +1,7 @@
 from collections import namedtuple
 import os
 import shutil
+import copy
 
 
 # YUNI: 一边骂别人不写注释一边自己不写注释的我本人
@@ -13,8 +14,14 @@ class System:
         self.tables_filepath = None
         self.columns_filepath = None
         self.table_path = {}
+<<<<<<< HEAD
         self.table_attributes= {}
         self.database_tables = {}
+=======
+        self.table_attributes = {} # dict: "table_1" = {'column_1':['INT','True'],'column_2':['STRING','False']}
+        self.database_tables = {}
+
+>>>>>>> 95f0f1c445b714ec9b88bf249e045e376a4ca6bb
 
     
     def Create_Database(self,database_name):
@@ -62,9 +69,9 @@ class System:
                 
                 if line_2[0] in self.table_attributes:
 
-                    self.table_attributes[line_2[0]].append(line_2[1:])
+                    self.table_attributes[line_2[0]][line_2[1]] = line_2[2:]
                 else:
-                    self.table_attributes[line_2[0]] = [line_2[1:]]
+                    self.table_attributes[line_2[0]] = {line_2[1]:line_2[2:]}
 
         print(self.table_attributes)
         # print(self.table_path)
@@ -91,6 +98,7 @@ class System:
 
     def Create_Table(self,relation_name:str,attribute_list:list):
         # YUNI: 0408 Tested
+        # YUNI: 0414 TODO: NEED TO BE REWRITE
         current_table_path = os.path.join(self.database_name,relation_name+'.csv')
         if not os.path.exists(current_table_path):
             self.table_path[relation_name] = current_table_path
@@ -129,10 +137,16 @@ class System:
 
         return
     
+    def create_table_dict(self,relation_name:str,attribute:dict):
+        # TODO
+        
+        return
+
 
 
     def Drop_Table(self,relation_name):
         # YUNI: 0408 Tested
+        # YUNI: 0414 TODO: NEED TO BE REWRITE
         if relation_name in self.table_path:
 
             os.remove(self.table_path[relation_name])
@@ -200,6 +214,7 @@ class System:
 
         # check duplicates
 
+<<<<<<< HEAD
         primary_key_list = self.find_primary_key()
         for i,column in enumerate(insert_cols):
             if column in primary_key_list:
@@ -211,23 +226,64 @@ class System:
         
         for i,column in enumerate(insert_cols):
             self.database_tables[relation_name][column].append(insert_vals[i])
+=======
+        primary_key_list = self.find_primary_key(relation_name)
+        inserted_primary_key = []
+        for i,column in enumerate(insert_cols):
+            if column in primary_key_list:
+                try_insert_list = copy.deepcopy(self.database_tables[relation_name][column])
+                if self.table_attributes[relation_name][column][0] == 'INT':
+                    try_insert_list.append(int(insert_vals[i]))
+                else:
+                    try_insert_list.append(insert_vals[i])
+                inserted_primary_key.append(try_insert_list)
+        if self.check_duplicates(inserted_primary_key) == True:
+            print("Insertion ERROR: There exists DUPLICATES. ")
+            return
+        
+        for i,column in enumerate(insert_cols):
+            if self.table_attributes[relation_name][column][0] == 'INT':
+
+                self.database_tables[relation_name][column].append(int(insert_vals[i]))
+            else:
+                self.database_tables[relation_name][column].append(insert_vals[i])
+
+>>>>>>> 95f0f1c445b714ec9b88bf249e045e376a4ca6bb
         
         return
 
     def find_primary_key(self,relation_name):
         primary_key = []
+<<<<<<< HEAD
         for attr in self.table_attributes[relation_name]:#name,type,primary key
             if attr[2] == 'True':
                 primary_key.append(attr[0])
+=======
+
+        for attr in self.table_attributes[relation_name].keys():#name,type,primary key
+            if self.table_attributes[relation_name][attr][1] == 'True':
+                primary_key.append(attr)
+>>>>>>> 95f0f1c445b714ec9b88bf249e045e376a4ca6bb
         return primary_key
     
     def check_duplicates(self,primary_column_list):
         # return False -> no duplicates
         # return True -> has duplicates
+<<<<<<< HEAD
         if len(primary_column_list) == len(set(primary_column_list)):
             return False
         else:
             return True
+=======
+        if len(primary_column_list) == 1:
+            if len(primary_column_list[0]) == len(set(primary_column_list[0])):
+                return False
+        else:
+            primary_key_pairs = list(zip(*primary_column_list))
+            if len(primary_key_pairs) == len(set(primary_key_pairs)):
+                return False
+        return True
+>>>>>>> 95f0f1c445b714ec9b88bf249e045e376a4ca6bb
         
 
     def delete_data(self,relation_name,data_pos):
@@ -248,11 +304,7 @@ class System:
         return
     
     def get_column_list(self,relation_name):
-        attribute_list = self.table_attributes[relation_name]
-        table_attr = []
-        for attri in attribute_list:
-            table_attr.append(attri[0])
-        return table_attr
+        return list(self.table_attributes[relation_name].keys())
     
 
     def overwrite_data(self,relation_name,data_dict:dict):
@@ -280,20 +332,46 @@ class System:
     def update_data(self,relation_name,update_dict:dict,where_dict:dict):
 
         # TODO: Check duplicates
+<<<<<<< HEAD
+=======
+        # Where only 1 condition
+>>>>>>> 95f0f1c445b714ec9b88bf249e045e376a4ca6bb
 
         # database_table = self.get_data(relation_name)
         table_attri = self.get_column_list(relation_name)
 
         total_number_row = len(self.database_tables[relation_name][table_attri[0]])
+<<<<<<< HEAD
         match_flag = False
         where_col = where_dict['cols']
         where_val = where_dict['vals']
         where_op = where_dict['ops']
+=======
+        
+        where_col = where_dict['cols'][0]
+
+        if self.table_attributes[relation_name][where_col][0] == 'INT':
+            where_val = int(where_dict['vals'][0])
+        else:
+            where_val = where_dict['vals'][0]
+
+        for col_idx,col in enumerate(update_dict['cols']):
+            if self.table_attributes[relation_name][col][0] == 'INT':
+                update_dict['vals'][col_idx] = int(update_dict['vals'][col_idx])
+        
+        where_op = where_dict['ops'][0]
+        print("&&&",where_op)
+>>>>>>> 95f0f1c445b714ec9b88bf249e045e376a4ca6bb
         update_row_list = []
         for i in range(total_number_row):
+            match_flag = False
             if where_op == "=":
 
                 if self.database_tables[relation_name][where_col][i] == where_val:
+<<<<<<< HEAD
+=======
+                    print("((((",self.database_tables[relation_name][where_col][i],where_val)
+>>>>>>> 95f0f1c445b714ec9b88bf249e045e376a4ca6bb
                     match_flag = True
 
             if where_op == ">":
@@ -316,6 +394,7 @@ class System:
             
             if match_flag == True:
                 update_row_list.append(i)
+<<<<<<< HEAD
         
         primary_key_list = self.find_primary_key()
         for check_i,column in enumerate(update_dict['cols']):
@@ -331,6 +410,28 @@ class System:
             self.database_tables[relation_name][column][i] = update_dict['vals'][j]
             
         return
+=======
+        print("###",update_row_list)
+        
+        primary_key_list = self.find_primary_key(relation_name)
+        primary_update_list = []
+        for check_i,column in enumerate(update_dict['cols']):
+            if column in primary_key_list:
+                try_update_list = copy.deepcopy(self.database_tables[relation_name][column])
+                for row_idx in update_row_list:
+                    try_update_list[row_idx] = update_dict['vals'][check_i]
+                primary_update_list.append(try_update_list)
+        if self.check_duplicates(primary_update_list) == True:
+            print("Insertion ERROR: There exists DUPLICATES. ")
+            return
+        for update_idx in update_row_list:
+            for j,column in enumerate(update_dict['cols']):
+                print(self.database_tables[relation_name][column])
+                print(update_dict['vals'])
+                self.database_tables[relation_name][column][update_idx] = update_dict['vals'][j]
+                
+            return
+>>>>>>> 95f0f1c445b714ec9b88bf249e045e376a4ca6bb
         
 
 
@@ -372,18 +473,23 @@ class System:
         data_in_table = []
         data_attributes = []
         for attr in self.table_attributes[relation_name]:
-            data_attributes.append(attr[0])
+            data_attributes.append(attr)
         with open(current_table_path,"r") as f:
             f.readline()
             for data_line in f.readlines():
                 data_line = data_line.strip('\n')
                 data_in_table.append(data_line.split(","))
+<<<<<<< HEAD
         print(data_in_table)
+=======
+        # print(data_in_table)
+        # print(data_attributes)
+>>>>>>> 95f0f1c445b714ec9b88bf249e045e376a4ca6bb
         data_dict = {}
         for i,column in enumerate(data_attributes):
             data_dict[column] = []
             for data_row in data_in_table:
-                if self.table_attributes[relation_name][i][1] == "INT":
+                if self.table_attributes[relation_name][column][0] == "INT":
                     data_dict[column].append(int(data_row[i]))
                 else:
                     data_dict[column].append(data_row[i])
@@ -409,7 +515,11 @@ if __name__=='__main__':
     # # A2=ATTRIBUTE(*['animal_age','INT',1,False])
     
     print(mySystem.open_database('CLASS'))
+<<<<<<< HEAD
     print(mySystem.find_primary_key('name_height'))
+=======
+    # print(mySystem.find_primary_key('name_height'))
+>>>>>>> 95f0f1c445b714ec9b88bf249e045e376a4ca6bb
     # mySystem.delete_data('name_age',0)
     # mySystem.Create_Table('name_age',[['name','String',True],['age','INT',False]])
     # mySystem.Create_Table('name_height',[['name','String',True],['height','INT',False]])
@@ -431,7 +541,11 @@ if __name__=='__main__':
     # mySystem.Drop_Table('name_age') 
     # mySystem.Drop_Database()
     # mySystem.open_databa
+<<<<<<< HEAD
 
+=======
+    print(mySystem.check_duplicates([[1,2,1,4],[2,3,2,5]]))
+>>>>>>> 95f0f1c445b714ec9b88bf249e045e376a4ca6bb
 
 
 

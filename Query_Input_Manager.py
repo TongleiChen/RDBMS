@@ -890,9 +890,9 @@ if __name__=='__main__':
     # 2. create grammar
     create_query = """
     CREATE TABLE customers (
-    id INT FOREIGN KEY,
+    id INT PRIMARY KEY,
     name VARCHAR(50) NOT NULL,
-    age INT,
+    age INT PRIMARY KEY,
     email VARCHAR(100) NOT NULL
     );
     """
@@ -941,4 +941,27 @@ if __name__=='__main__':
 
     # update_query="UPDATE name_height SET name = 'suzy' WHERE column3 = 10;"
     # UPDATE_SQL_EVALUATOR=UPDATE_tree_Evaluator(UPDATE_SQL_Grammar,update_query)
+<<<<<<< HEAD
     # print(UPDATE_SQL_EVALUATOR.get_result())
+=======
+    # print(UPDATE_SQL_EVALUATOR.get_result())
+
+
+
+
+    insert_query="INSERT INTO name_age (name, age) VALUES ('Chelsea', 18);"
+    INSERT_SQL_EVALUATOR=INSERT_tree_Evaluator(INSERT_SQL_Grammar,insert_query)
+    print(INSERT_SQL_EVALUATOR.get_result())
+
+    mySystem.insert_data(INSERT_SQL_EVALUATOR.table_name,INSERT_SQL_EVALUATOR.insert_cols,INSERT_SQL_EVALUATOR.insert_vals)
+    print(mySystem.database_tables)
+
+
+    update_query="UPDATE name_age SET age = 150 WHERE age = 13;"
+    UPDATE_SQL_EVALUATOR=UPDATE_tree_Evaluator(UPDATE_SQL_Grammar,update_query)
+    print(UPDATE_SQL_EVALUATOR.get_result())
+    mySystem.update_data(UPDATE_SQL_EVALUATOR.table_name,UPDATE_SQL_EVALUATOR.update_clause,UPDATE_SQL_EVALUATOR.where_clause)
+    print(mySystem.database_tables)
+
+
+>>>>>>> 95f0f1c445b714ec9b88bf249e045e376a4ca6bb
