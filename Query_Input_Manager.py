@@ -833,3 +833,13 @@ if __name__=='__main__':
     # update_query="UPDATE name_height SET name = 'suzy' WHERE column3 = 10;"
     # UPDATE_SQL_EVALUATOR=UPDATE_tree_Evaluator(UPDATE_SQL_Grammar,update_query)
     # print(UPDATE_SQL_EVALUATOR.get_result())
+
+
+
+
+    insert_query="INSERT INTO name_age (name, age) VALUES ('Chelsea', 18);"
+    INSERT_SQL_EVALUATOR=INSERT_tree_Evaluator(INSERT_SQL_Grammar,insert_query)
+    print(INSERT_SQL_EVALUATOR.get_result())
+
+    mySystem.insert_data(INSERT_SQL_EVALUATOR.table_name,INSERT_SQL_EVALUATOR.insert_cols,INSERT_SQL_EVALUATOR.insert_vals)
+    print(mySystem.database_tables)
