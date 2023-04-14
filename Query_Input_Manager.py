@@ -941,9 +941,6 @@ if __name__=='__main__':
 
     # update_query="UPDATE name_height SET name = 'suzy' WHERE column3 = 10;"
     # UPDATE_SQL_EVALUATOR=UPDATE_tree_Evaluator(UPDATE_SQL_Grammar,update_query)
-<<<<<<< HEAD
-    # print(UPDATE_SQL_EVALUATOR.get_result())
-=======
     # print(UPDATE_SQL_EVALUATOR.get_result())
 
 
@@ -964,4 +961,3 @@ if __name__=='__main__':
     print(mySystem.database_tables)
 
 
->>>>>>> 95f0f1c445b714ec9b88bf249e045e376a4ca6bb

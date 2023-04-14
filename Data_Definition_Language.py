@@ -14,14 +14,9 @@ class System:
         self.tables_filepath = None
         self.columns_filepath = None
         self.table_path = {}
-<<<<<<< HEAD
-        self.table_attributes= {}
-        self.database_tables = {}
-=======
         self.table_attributes = {} # dict: "table_1" = {'column_1':['INT','True'],'column_2':['STRING','False']}
         self.database_tables = {}
 
->>>>>>> 95f0f1c445b714ec9b88bf249e045e376a4ca6bb
 
     
     def Create_Database(self,database_name):
@@ -214,19 +209,6 @@ class System:
 
         # check duplicates
 
-<<<<<<< HEAD
-        primary_key_list = self.find_primary_key()
-        for i,column in enumerate(insert_cols):
-            if column in primary_key_list:
-                try_insert_list = self.database_tables[relation_name][column]
-                try_insert_list.append(insert_vals[i])
-                if self.check_duplicates(try_insert_list) == True:
-                    print("Insertion ERROR: There exists DUPLICATES. ")
-                    return
-        
-        for i,column in enumerate(insert_cols):
-            self.database_tables[relation_name][column].append(insert_vals[i])
-=======
         primary_key_list = self.find_primary_key(relation_name)
         inserted_primary_key = []
         for i,column in enumerate(insert_cols):
@@ -248,33 +230,20 @@ class System:
             else:
                 self.database_tables[relation_name][column].append(insert_vals[i])
 
->>>>>>> 95f0f1c445b714ec9b88bf249e045e376a4ca6bb
         
         return
 
     def find_primary_key(self,relation_name):
         primary_key = []
-<<<<<<< HEAD
-        for attr in self.table_attributes[relation_name]:#name,type,primary key
-            if attr[2] == 'True':
-                primary_key.append(attr[0])
-=======
 
         for attr in self.table_attributes[relation_name].keys():#name,type,primary key
             if self.table_attributes[relation_name][attr][1] == 'True':
                 primary_key.append(attr)
->>>>>>> 95f0f1c445b714ec9b88bf249e045e376a4ca6bb
         return primary_key
     
     def check_duplicates(self,primary_column_list):
         # return False -> no duplicates
         # return True -> has duplicates
-<<<<<<< HEAD
-        if len(primary_column_list) == len(set(primary_column_list)):
-            return False
-        else:
-            return True
-=======
         if len(primary_column_list) == 1:
             if len(primary_column_list[0]) == len(set(primary_column_list[0])):
                 return False
@@ -283,7 +252,6 @@ class System:
             if len(primary_key_pairs) == len(set(primary_key_pairs)):
                 return False
         return True
->>>>>>> 95f0f1c445b714ec9b88bf249e045e376a4ca6bb
         
 
     def delete_data(self,relation_name,data_pos):
@@ -332,21 +300,12 @@ class System:
     def update_data(self,relation_name,update_dict:dict,where_dict:dict):
 
         # TODO: Check duplicates
-<<<<<<< HEAD
-=======
         # Where only 1 condition
->>>>>>> 95f0f1c445b714ec9b88bf249e045e376a4ca6bb
 
         # database_table = self.get_data(relation_name)
         table_attri = self.get_column_list(relation_name)
 
         total_number_row = len(self.database_tables[relation_name][table_attri[0]])
-<<<<<<< HEAD
-        match_flag = False
-        where_col = where_dict['cols']
-        where_val = where_dict['vals']
-        where_op = where_dict['ops']
-=======
         
         where_col = where_dict['cols'][0]
 
@@ -361,17 +320,13 @@ class System:
         
         where_op = where_dict['ops'][0]
         print("&&&",where_op)
->>>>>>> 95f0f1c445b714ec9b88bf249e045e376a4ca6bb
         update_row_list = []
         for i in range(total_number_row):
             match_flag = False
             if where_op == "=":
 
                 if self.database_tables[relation_name][where_col][i] == where_val:
-<<<<<<< HEAD
-=======
                     print("((((",self.database_tables[relation_name][where_col][i],where_val)
->>>>>>> 95f0f1c445b714ec9b88bf249e045e376a4ca6bb
                     match_flag = True
 
             if where_op == ">":
@@ -394,23 +349,6 @@ class System:
             
             if match_flag == True:
                 update_row_list.append(i)
-<<<<<<< HEAD
-        
-        primary_key_list = self.find_primary_key()
-        for check_i,column in enumerate(update_dict['cols']):
-            if column in primary_key_list:
-                try_insert_list = self.database_tables[relation_name][column]
-                for row_idx in update_row_list:
-                    try_insert_list[row_idx] = update_dict['vals'][check_i]
-                
-                if self.check_duplicates(try_insert_list) == True:
-                    print("Insertion ERROR: There exists DUPLICATES. ")
-                    return
-        for j,column in enumerate(update_dict['cols']):
-            self.database_tables[relation_name][column][i] = update_dict['vals'][j]
-            
-        return
-=======
         print("###",update_row_list)
         
         primary_key_list = self.find_primary_key(relation_name)
@@ -431,7 +369,6 @@ class System:
                 self.database_tables[relation_name][column][update_idx] = update_dict['vals'][j]
                 
             return
->>>>>>> 95f0f1c445b714ec9b88bf249e045e376a4ca6bb
         
 
 
@@ -479,12 +416,8 @@ class System:
             for data_line in f.readlines():
                 data_line = data_line.strip('\n')
                 data_in_table.append(data_line.split(","))
-<<<<<<< HEAD
-        print(data_in_table)
-=======
         # print(data_in_table)
         # print(data_attributes)
->>>>>>> 95f0f1c445b714ec9b88bf249e045e376a4ca6bb
         data_dict = {}
         for i,column in enumerate(data_attributes):
             data_dict[column] = []
@@ -515,11 +448,7 @@ if __name__=='__main__':
     # # A2=ATTRIBUTE(*['animal_age','INT',1,False])
     
     print(mySystem.open_database('CLASS'))
-<<<<<<< HEAD
-    print(mySystem.find_primary_key('name_height'))
-=======
     # print(mySystem.find_primary_key('name_height'))
->>>>>>> 95f0f1c445b714ec9b88bf249e045e376a4ca6bb
     # mySystem.delete_data('name_age',0)
     # mySystem.Create_Table('name_age',[['name','String',True],['age','INT',False]])
     # mySystem.Create_Table('name_height',[['name','String',True],['height','INT',False]])
@@ -541,11 +470,7 @@ if __name__=='__main__':
     # mySystem.Drop_Table('name_age') 
     # mySystem.Drop_Database()
     # mySystem.open_databa
-<<<<<<< HEAD
-
-=======
     print(mySystem.check_duplicates([[1,2,1,4],[2,3,2,5]]))
->>>>>>> 95f0f1c445b714ec9b88bf249e045e376a4ca6bb
 
 
 

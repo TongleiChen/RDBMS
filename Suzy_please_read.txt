@@ -1,12 +1,7 @@
 UPDATE grammar 里面好像只能是number
 "UPDATE name_height SET name = 'suzy' WHERE height = 170;"这种好像就跑不出来了
 😭
-<<<<<<< HEAD
-好想睡觉
-不想写database
-=======
 
 0414: 
 1. UPDATE 可以只pass string 给我 不转换成int没关系的 就和你的insert差不多？
 2. 提问：foreign key是有分cascade和no cascade两种check情况，还是不加cascade也要check并且如果有冲突就报错？
->>>>>>> 95f0f1c445b714ec9b88bf249e045e376a4ca6bb
