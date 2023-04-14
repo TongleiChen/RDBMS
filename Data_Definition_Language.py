@@ -201,13 +201,15 @@ class System:
         # check duplicates
 
         primary_key_list = self.find_primary_key()
+        inserted_primary_key = []
         for i,column in enumerate(insert_cols):
             if column in primary_key_list:
                 try_insert_list = self.database_tables[relation_name][column]
                 try_insert_list.append(insert_vals[i])
-                if self.check_duplicates(try_insert_list) == True:
-                    print("Insertion ERROR: There exists DUPLICATES. ")
-                    return
+                inserted_primary_key.append(try_insert_list)
+        if self.check_duplicates(inserted_primary_key) == True:
+            print("Insertion ERROR: There exists DUPLICATES. ")
+            return
         
         for i,column in enumerate(insert_cols):
             self.database_tables[relation_name][column].append(insert_vals[i])
@@ -224,10 +226,14 @@ class System:
     def check_duplicates(self,primary_column_list):
         # return False -> no duplicates
         # return True -> has duplicates
-        if len(primary_column_list) == len(set(primary_column_list)):
-            return False
+        if len(primary_column_list) == 1:
+            if len(primary_column_list[0]) == len(set(primary_column_list[0])):
+                return False
         else:
-            return True
+            primary_key_pairs = list(zip(*primary_column_list))
+            if len(primary_key_pairs) == len(set(primary_key_pairs)):
+                return False
+        return True
         
 
     def delete_data(self,relation_name,data_pos):
@@ -409,7 +415,7 @@ if __name__=='__main__':
     # # A2=ATTRIBUTE(*['animal_age','INT',1,False])
     
     print(mySystem.open_database('CLASS'))
-    print(mySystem.find_primary_key('name_height'))
+    # print(mySystem.find_primary_key('name_height'))
     # mySystem.delete_data('name_age',0)
     # mySystem.Create_Table('name_age',[['name','String',True],['age','INT',False]])
     # mySystem.Create_Table('name_height',[['name','String',True],['height','INT',False]])
@@ -431,7 +437,7 @@ if __name__=='__main__':
     # mySystem.Drop_Table('name_age') 
     # mySystem.Drop_Database()
     # mySystem.open_databa
-
+    print(mySystem.check_duplicates([[1,2,1,4],[2,3,2,5]]))
 
 
 
