@@ -821,3 +821,15 @@ if __name__=='__main__':
     delete_query="DELETE FROM customers WHERE age < 18 CASCADE;"
     DELETE_SQL_EVALUATOR=DELETE_tree_Evaluator(DELETE_SQL_Grammar,delete_query)
     print(DELETE_SQL_EVALUATOR.get_result())
+
+
+
+    # update_query_2 = "UPDATE name_height SET height = 160 WHERE name = 'suzy';"
+    # UPDATE_SQL_EVALUATOR_2=UPDATE_tree_Evaluator(UPDATE_SQL_Grammar,update_query_2)
+    # DELETE_SQL_EVALUATOR.get_result()
+    # mySystem.update_data(UPDATE_SQL_EVALUATOR_2.table_name,UPDATE_SQL_EVALUATOR_2.update_clause,UPDATE_SQL_EVALUATOR_2.where_clause)
+    # print(mySystem.database_tables)
+
+    # update_query="UPDATE name_height SET name = 'suzy' WHERE column3 = 10;"
+    # UPDATE_SQL_EVALUATOR=UPDATE_tree_Evaluator(UPDATE_SQL_Grammar,update_query)
+    # print(UPDATE_SQL_EVALUATOR.get_result())

@@ -14,6 +14,7 @@ class System:
         self.columns_filepath = None
         self.table_path = {}
         self.table_attributes= {}
+        self.database_tables = {}
 
     
     def Create_Database(self,database_name):
@@ -67,7 +68,11 @@ class System:
 
         print(self.table_attributes)
         # print(self.table_path)
-        return
+        for table in self.table_path.keys():
+            print(table)
+            self.database_tables[table] = self.get_data(table)
+        return self.database_tables
+    
     def Drop_Database(self):
         # YUNI: 0408 Tested
         if os.path.isdir('./' + self.database_name):
@@ -237,13 +242,16 @@ class System:
             f.writelines(new_data)
         
         return
+    
+
     def update_data(self,relation_name,update_dict:dict,where_dict:dict):
 
         # TODO: Check duplicates
-        database_table = self.get_data(relation_name)
+
+        # database_table = self.get_data(relation_name)
         table_attri = self.get_column_list(relation_name)
 
-        total_number_row = len(database_table[table_attri[0]])
+        total_number_row = len(self.database_tables[relation_name][table_attri[0]])
         match_flag = False
         where_col = where_dict['cols']
         where_val = where_dict['vals']
@@ -251,30 +259,32 @@ class System:
         for i in range(total_number_row):
             if where_op == "=":
 
-                if database_table[where_col][i] == where_val:
+                if self.database_tables[relation_name][where_col][i] == where_val:
                     match_flag = True
 
             if where_op == ">":
-                if database_table[where_col][i] > where_val:
+                if self.database_tables[relation_name][where_col][i] > where_val:
                     match_flag = True
 
 
             if where_op == ">=":
-                if database_table[where_col][i] >= where_val:
+                if self.database_tables[relation_name][where_col][i] >= where_val:
                     match_flag = True
 
 
             if where_op == "<":
-                if database_table[where_col][i] < where_val:
+                if self.database_tables[relation_name][where_col][i] < where_val:
                     match_flag = True
 
             if where_op == "<=":
-                if database_table[where_col][i] <= where_val:
+                if self.database_tables[relation_name][where_col][i] <= where_val:
                     match_flag = True
             
             if match_flag == True:
                 for j,column in enumerate(update_dict['cols']):
-                    database_table[column][i] = update_dict['vals'][j]
+                    self.database_tables[relation_name][column][i] = update_dict['vals'][j]
+            
+        
         
 
 
@@ -322,6 +332,7 @@ class System:
             for data_line in f.readlines():
                 data_line = data_line.strip('\n')
                 data_in_table.append(data_line.split(","))
+        print(data_in_table)
         data_dict = {}
         for i,column in enumerate(data_attributes):
             data_dict[column] = []
@@ -351,7 +362,7 @@ if __name__=='__main__':
     # # A1=ATTRIBUTE(*['animal_name','STR',0,True])
     # # A2=ATTRIBUTE(*['animal_age','INT',1,False])
     
-    mySystem.open_database('CLASS')
+    print(mySystem.open_database('CLASS'))
     # mySystem.delete_data('name_age',0)
     # mySystem.Create_Table('name_age',[['name','String',True],['age','INT',False]])
     # mySystem.Create_Table('name_height',[['name','String',True],['height','INT',False]])
@@ -362,16 +373,17 @@ if __name__=='__main__':
     # mySystem.update_data('name_age',1,data)
     # data = {"name": "suzy","height":170}
     # mySystem.insert_data('name_height',data)
-    table_name_age = mySystem.get_data('name_age')
-    print(table_name_age)
-    table_name_age['name'].append('Lesley')
-    table_name_age['age'].append(10)
-    print(table_name_age)
-    mySystem.overwrite_data("name_age",table_name_age)
+    # table_name_age = mySystem.get_data('name_age')
+    # print(table_name_age)
+    # table_name_age['name'].append('Lesley')
+    # table_name_age['age'].append(10)
+    # print(table_name_age)
+    # mySystem.overwrite_data("name_age",table_name_age)
 
     # print(mySystem.get_data('name_height'))
     # mySystem.Drop_Table('name_age') 
     # mySystem.Drop_Database()
+    # mySystem.open_databa
 
 
 
