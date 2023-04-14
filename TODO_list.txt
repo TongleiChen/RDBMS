@@ -1,0 +1,11 @@
+1. Primary key check duplicates.
+2. Foreign key with insert, delete and update cascade
+3. Create Index: 
+    (1). select with index. 
+    (2). When insert, delete and update, update index. 
+4. Execution: nested loop xxxxxx
+5. Test update function
+6. Link create, drop, delete sql to Data_Definition_Language system.
+7. Edit insert. 
+8. Decide when to write in disk, i.e., csv file.
+9. 活着

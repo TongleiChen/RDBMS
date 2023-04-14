@@ -1,3 +1,5 @@
 UPDATE grammar 里面好像只能是number
 "UPDATE name_height SET name = 'suzy' WHERE height = 170;"这种好像就跑不出来了
 😭
+好想睡觉
+不想写database
