@@ -1,5 +1,6 @@
 UPDATE grammar 里面好像只能是number
 "UPDATE name_height SET name = 'suzy' WHERE height = 170;"这种好像就跑不出来了
 😭
-好想睡觉
-不想写database
+
+0414: 
+UPDATE 可以只pass string 给我 不转换成int没关系的 就和你的insert差不多？

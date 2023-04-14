@@ -843,3 +843,12 @@ if __name__=='__main__':
 
     mySystem.insert_data(INSERT_SQL_EVALUATOR.table_name,INSERT_SQL_EVALUATOR.insert_cols,INSERT_SQL_EVALUATOR.insert_vals)
     print(mySystem.database_tables)
+
+
+    update_query="UPDATE name_age SET age = 150 WHERE age = 13;"
+    UPDATE_SQL_EVALUATOR=UPDATE_tree_Evaluator(UPDATE_SQL_Grammar,update_query)
+    print(UPDATE_SQL_EVALUATOR.get_result())
+    mySystem.update_data(UPDATE_SQL_EVALUATOR.table_name,UPDATE_SQL_EVALUATOR.update_clause,UPDATE_SQL_EVALUATOR.where_clause)
+    print(mySystem.database_tables)
+
+

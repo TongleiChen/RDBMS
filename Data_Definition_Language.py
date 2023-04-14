@@ -267,7 +267,7 @@ class System:
         return
     
     def get_column_list(self,relation_name):
-        return self.table_attributes[relation_name].keys()
+        return list(self.table_attributes[relation_name].keys())
     
 
     def overwrite_data(self,relation_name,data_dict:dict):
@@ -301,22 +301,27 @@ class System:
         table_attri = self.get_column_list(relation_name)
 
         total_number_row = len(self.database_tables[relation_name][table_attri[0]])
-        match_flag = False
-        where_col = where_dict['cols']
+        
+        where_col = where_dict['cols'][0]
 
-        for col in update_dict['cols'].keys():
-            if self.table_attributes[relation_name][col][0] == 'INT':
-                update_dict['vals'] = int(update_dict['vals'])
         if self.table_attributes[relation_name][where_col][0] == 'INT':
-            where_val = int(where_dict['vals'])
+            where_val = int(where_dict['vals'][0])
         else:
-            where_val = where_dict['vals']
-        where_op = where_dict['ops']
+            where_val = where_dict['vals'][0]
+
+        for col_idx,col in enumerate(update_dict['cols']):
+            if self.table_attributes[relation_name][col][0] == 'INT':
+                update_dict['vals'][col_idx] = int(update_dict['vals'][col_idx])
+        
+        where_op = where_dict['ops'][0]
+        print("&&&",where_op)
         update_row_list = []
         for i in range(total_number_row):
+            match_flag = False
             if where_op == "=":
 
                 if self.database_tables[relation_name][where_col][i] == where_val:
+                    print("((((",self.database_tables[relation_name][where_col][i],where_val)
                     match_flag = True
 
             if where_op == ">":
@@ -339,6 +344,7 @@ class System:
             
             if match_flag == True:
                 update_row_list.append(i)
+        print("###",update_row_list)
         
         primary_key_list = self.find_primary_key(relation_name)
         primary_update_list = []
@@ -351,10 +357,13 @@ class System:
         if self.check_duplicates(primary_update_list) == True:
             print("Insertion ERROR: There exists DUPLICATES. ")
             return
-        for j,column in enumerate(update_dict['cols']):
-            self.database_tables[relation_name][column][i] = update_dict['vals'][j]
-            
-        return
+        for update_idx in update_row_list:
+            for j,column in enumerate(update_dict['cols']):
+                print(self.database_tables[relation_name][column])
+                print(update_dict['vals'])
+                self.database_tables[relation_name][column][update_idx] = update_dict['vals'][j]
+                
+            return
         
 
 
