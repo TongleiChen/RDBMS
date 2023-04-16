@@ -9,4 +9,5 @@
 7. (✅) Edit insert. 
 8. Decide when to write in disk, i.e., csv file.
 9. SELECT!!!
-10. 活着
+10. (Is there any way to apply ">" "<" "=" directly into "if" condition??? )
+11. 活着

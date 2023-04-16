@@ -99,6 +99,7 @@ class System:
             self.table_path[relation_name] = current_table_path
 
 
+
             # write relation name data to TABLES.csv
             with open(self.tables_filepath,'r+') as f:
                 f.seek(0, 2)
@@ -132,11 +133,53 @@ class System:
 
         return
     
+    
     def create_table_dict(self,relation_name:str,attribute:dict):
-        # TODO
+
+        # YUNI: 0415 TESTED
+        if relation_name in self.table_path:
+            print("CREATE ERROR: Table already exists.")
+            return
+            
+        current_table_path = os.path.join(self.database_name,relation_name+'.csv')
+        col_names = attribute['names']
+        col_data_type = attribute['data_type']
+        col_constraints = attribute['constraints']
+        # add to path
+        self.table_path[relation_name] = current_table_path
+
+        # add attributes
+        self.table_attributes[relation_name] = {}
+        self.database_tables[relation_name] = {}
+        for col_idx,col_name_i in enumerate(col_names):
+            self.database_tables[relation_name][col_name_i] = []
+            if col_data_type[col_idx] == 'INT':
+                self.table_attributes[relation_name][col_name_i] = [col_data_type[col_idx]]
+            else:
+                self.table_attributes[relation_name][col_name_i] = ['STR']
+            if col_constraints[col_idx] == 'PRIMARY KEY':
+                self.table_attributes[relation_name][col_name_i].append("True")
+            else:
+                self.table_attributes[relation_name][col_name_i].append("False")
+        # add to database
+        
+
+        return
+    
+    def drop_table_dict(self,relation_name:str):
+
+        # YUNI: 0415 TESTED
+        # delete path
+        # delete attributes
+        # delete database
+        if relation_name not in self.table_path:
+            print("DROP ERROR: Table does not exist.")
+            return
+        del self.table_path[relation_name]
+        del self.table_attributes[relation_name]
+        del self.database_tables[relation_name]
         
         return
-
 
 
     def Drop_Table(self,relation_name):
@@ -254,8 +297,66 @@ class System:
         return True
         
 
+
+    def delete_data_dict(self,relation_name:str, where_dict:dict):
+        # YUNI: 0415 TESTED
+        table_attri = self.get_column_list(relation_name)
+
+        total_number_row = len(self.database_tables[relation_name][table_attri[0]])
+        
+        where_col = where_dict['cols'][0]
+
+        if self.table_attributes[relation_name][where_col][0] == 'INT':
+            where_val = int(where_dict['vals'][0])
+        else:
+            where_val = where_dict['vals'][0]
+
+
+        where_op = where_dict['ops'][0]
+        # print("&&&",where_op)
+
+
+        delete_row_list = []
+        for i in range(total_number_row):
+            match_flag = False
+            if where_op == "=":
+
+                if self.database_tables[relation_name][where_col][i] == where_val:
+                    # print("((((",self.database_tables[relation_name][where_col][i],where_val)
+                    match_flag = True
+
+            if where_op == ">":
+                if self.database_tables[relation_name][where_col][i] > where_val:
+                    match_flag = True
+
+
+            if where_op == ">=":
+                if self.database_tables[relation_name][where_col][i] >= where_val:
+                    match_flag = True
+
+
+            if where_op == "<":
+                if self.database_tables[relation_name][where_col][i] < where_val:
+                    match_flag = True
+
+            if where_op == "<=":
+                if self.database_tables[relation_name][where_col][i] <= where_val:
+                    match_flag = True
+            
+            if match_flag == True:
+                delete_row_list.append(i)
+        print("###",delete_row_list)
+        
+        delete_row_list_reverse = delete_row_list[::-1]
+        for delete_idx in delete_row_list_reverse:
+            for column in self.table_attributes[relation_name].keys():
+                del self.database_tables[relation_name][column][delete_idx]
+        
+        return
+        
     def delete_data(self,relation_name,data_pos):
         # YUNI: 0408 Tested
+        
         current_table_path = self.table_path[relation_name]
         new_data = []
         with open(current_table_path,"r") as f:
@@ -299,7 +400,7 @@ class System:
 
     def update_data(self,relation_name,update_dict:dict,where_dict:dict):
 
-        # TODO: Check duplicates
+        # YUNI: unknown data TESTED
         # Where only 1 condition
 
         # database_table = self.get_data(relation_name)
@@ -319,14 +420,14 @@ class System:
                 update_dict['vals'][col_idx] = int(update_dict['vals'][col_idx])
         
         where_op = where_dict['ops'][0]
-        print("&&&",where_op)
+        # print("&&&",where_op)
         update_row_list = []
         for i in range(total_number_row):
             match_flag = False
             if where_op == "=":
 
                 if self.database_tables[relation_name][where_col][i] == where_val:
-                    print("((((",self.database_tables[relation_name][where_col][i],where_val)
+                    # print("((((",self.database_tables[relation_name][where_col][i],where_val)
                     match_flag = True
 
             if where_op == ">":
@@ -368,7 +469,7 @@ class System:
                 print(update_dict['vals'])
                 self.database_tables[relation_name][column][update_idx] = update_dict['vals'][j]
                 
-            return
+        return
         
 
 

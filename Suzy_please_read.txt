@@ -5,3 +5,10 @@ UPDATE grammar 里面好像只能是number
 0414: 
 1. UPDATE 可以只pass string 给我 不转换成int没关系的 就和你的insert差不多？
 2. 提问：foreign key是有分cascade和no cascade两种check情况，还是不加cascade也要check并且如果有冲突就报错？
+
+
+0415:
+1. 你传给我的CREATE_tree_Evaluator里面的table_name是Token('CNAME', 'customers')这样的。能不能只要一个table的string哇
+2. 0414的提问2你是不是回答过我了but我忘记了
+3. 我真的热死了 我真的热死了 我真的热死了
+4. 是只有delete有cascade吗啊啊啊啊我还是不会
