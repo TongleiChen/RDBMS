@@ -1,7 +1,18 @@
-UPDATE grammar 里面好像只能是number
-"UPDATE name_height SET name = 'suzy' WHERE height = 170;"这种好像就跑不出来了
 😭
-
 0414: 
 1. UPDATE 可以只pass string 给我 不转换成int没关系的 就和你的insert差不多？
 2. 提问：foreign key是有分cascade和no cascade两种check情况，还是不加cascade也要check并且如果有冲突就报错？
+3. 整理一下select的语法树 等待ctl跟我会议
+4. query的语法不严谨，name = 'Suzy'
+
+select grammar supports:
+SELECT selection from_clause options
+selection: * | column1, column2, column3 | SUM(column) | MAX(column) | MIN(column) 
+from_clause: FROM table
+options:    where_clause: WHERE condition1 (AND/OR condition2)| age BETWEEN 2 AND 4 
+    | order_by_clause: ORDER BY age ASC/DESC
+    | group_having_clause: 
+
+TODO:
+1. 加GROUP BY-HAVING condition
+2. HAVING SUM() COUNT() AVG() MAX() MIN()
