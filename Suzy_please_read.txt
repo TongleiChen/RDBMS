@@ -5,7 +5,7 @@
 ✅3. 加GROUP BY-HAVING condition 
 ✅4. HAVING SUM() COUNT() AVG() MAX() MIN() (我们group by 简化为只跟一个column吧！！！)
 ✅5. select语法树中添加join的语法: 
-Minimum of a 2-table theta-join:1. 对两张表进行笛卡尔积；2. 在得到的结果中选择合适的项。我们简化为连接部分选择inner join的方式
+Minimum of a 2-table theta-join:1. 对两张表进行笛卡尔积；2. 在得到的结果中选择合适的项。
 ********************************************
 SELECT column1, column2, ...
 FROM table1

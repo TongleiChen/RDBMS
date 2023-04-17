@@ -690,6 +690,19 @@ class SELECT_tree_Evaluator:
         else:
             raise SyntaxError('unrecognized tree')
 
+class new_SELECT_tree_Evaluator:
+    def __init__(self,grammar,query) -> None:
+        self.parser = Lark(grammar)
+        self.query=query
+        self.result=BeautifulTable()
+        self.selection_clause={"cols":[],"agg_fun":[]}
+        self.from_clause={} # table name
+        self.option={"where_clause":{},
+                     "order_by_clause":{},
+                     "group_having_clause":{},
+                     "theta_join_clause":{},
+                     "group_having_clause":{}}
+        
 class UPDATE_tree_Evaluator:
     def __init__(self,grammar,query) -> None:
         self.parser = Lark(grammar)
