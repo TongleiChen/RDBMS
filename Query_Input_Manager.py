@@ -910,12 +910,21 @@ if __name__=='__main__':
     """
     CREATE_SQL_EVALUATOR=CREATE_tree_Evaluator(CREATE_SQL_Grammar,create_query)
     print(CREATE_SQL_EVALUATOR.get_result())
+    mySystem.create_table_dict(CREATE_SQL_EVALUATOR.table_name.value,CREATE_SQL_EVALUATOR.attributes_clause)
+    print(mySystem.database_tables)
+    print(mySystem.table_attributes)
+    print(mySystem.table_path)
 
     # 3. drop grammar
     # 0410 tested
-    drop_query="DROP TABLE mybook;"
+    drop_query="DROP TABLE customers;"
     DROP_SQL_EVALUATOR=DROP_tree_Evaluator(DROP_SQL_Grammar,drop_query)
     print(DROP_SQL_EVALUATOR.get_result())
+    print(DROP_SQL_EVALUATOR.table_name)
+    mySystem.drop_table_dict(DROP_SQL_EVALUATOR.table_name)
+    print(mySystem.database_tables)
+    print(mySystem.table_attributes)
+    print(mySystem.table_path)
 
     # 4. update grammar
     # 0410 tested
@@ -939,9 +948,11 @@ if __name__=='__main__':
 
     # DELETE grammar
     # 0410 tested
-    delete_query="DELETE FROM customers WHERE age < 18 CASCADE;"
+    delete_query="DELETE FROM name_age WHERE age < 14 CASCADE;"
     DELETE_SQL_EVALUATOR=DELETE_tree_Evaluator(DELETE_SQL_Grammar,delete_query)
     print(DELETE_SQL_EVALUATOR.get_result())
+    mySystem.delete_data_dict(DELETE_SQL_EVALUATOR.table_name,DELETE_SQL_EVALUATOR.where_clause)
+    print(mySystem.database_tables)
 
 
 
@@ -966,7 +977,7 @@ if __name__=='__main__':
     print(mySystem.database_tables)
 
 
-    update_query="UPDATE name_age SET age = 150 WHERE age = 13;"
+    update_query="UPDATE name_age SET name = YUNI WHERE age = 13;"
     UPDATE_SQL_EVALUATOR=UPDATE_tree_Evaluator(UPDATE_SQL_Grammar,update_query)
     print(UPDATE_SQL_EVALUATOR.get_result())
     mySystem.update_data(UPDATE_SQL_EVALUATOR.table_name,UPDATE_SQL_EVALUATOR.update_clause,UPDATE_SQL_EVALUATOR.where_clause)

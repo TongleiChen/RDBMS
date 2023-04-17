@@ -1,0 +1,19 @@
+我的电脑里有五个版本的python
+《养蛊中》
+又是安装不成功的一天哈哈
+
+brainstorm:
+1. create index index_tree = OOBTree() tree.setdefault(key,value)
+2. update index index_tree['banana'] = 5  
+3. delete index del index_tree['cherry']
+4. how to store index in file? ZODB????
+5. find value: index_tree['cherry']
+
+
+
+plan:
+1. (✅) create index
+2. (✅) update index key when update data
+3. (✅) update index value when delete data
+4. (✅) update index value when insert data
+5. (✅) drop index
