@@ -2,6 +2,8 @@ from collections import namedtuple
 import os
 import shutil
 import copy
+from BTrees.OOBTree import OOBTree
+
 
 
 # YUNI: 一边骂别人不写注释一边自己不写注释的我本人
@@ -16,6 +18,7 @@ class System:
         self.table_path = {}
         self.table_attributes = {} # dict: "table_1" = {'column_1':['INT','True'],'column_2':['STRING','False']}
         self.database_tables = {}
+        self.table_index = {}
 
 
     
@@ -265,13 +268,24 @@ class System:
         if self.check_duplicates(inserted_primary_key) == True:
             print("Insertion ERROR: There exists DUPLICATES. ")
             return
-        
+        # TODO: insert_col not null check?
         for i,column in enumerate(insert_cols):
             if self.table_attributes[relation_name][column][0] == 'INT':
 
                 self.database_tables[relation_name][column].append(int(insert_vals[i]))
             else:
                 self.database_tables[relation_name][column].append(insert_vals[i])
+
+
+        
+        # TODO: NEED TO BE TESTED 0417
+        if relation_name in self.table_index:
+            # add index for the inserted data
+            inserted_index_value = len(self.database_tables[relation_name][column])
+            primary_key = primary_key_list[0]
+            inseted_index_key = self.database_tables[relation_name][primary_key][inserted_index_value]
+            self.table_index[relation_name].setdefault(inseted_index_key,inserted_index_value)
+            
 
         
         return
@@ -352,6 +366,14 @@ class System:
             for column in self.table_attributes[relation_name].keys():
                 del self.database_tables[relation_name][column][delete_idx]
         
+        # update index key after the first delete row!!
+        # TODO: NEED TO BE TESTED 0417
+        if relation_name in self.table_index:
+            delete_row_list_first = delete_row_list[0]
+            for update_idx_value in range(delete_row_list_first,total_number_row):
+                update_idx_key = self.database_tables[relation_name][column][update_idx_value]
+                self.table_index[relation_name][update_idx_key] = update_idx_value
+            
         return
         
     def delete_data(self,relation_name,data_pos):
@@ -468,6 +490,13 @@ class System:
                 print(self.database_tables[relation_name][column])
                 print(update_dict['vals'])
                 self.database_tables[relation_name][column][update_idx] = update_dict['vals'][j]
+
+
+                # TODO: NEED TO BE TESTED 0417
+                if (relation_name in self.table_index) and (column in primary_key_list):
+                    updated_row_num = self.table_index[relation_name].pop(column) # should equal to j
+                    self.table_index[relation_name].setdefault(update_dict['vals'][j],updated_row_num)
+
                 
         return
         
@@ -532,9 +561,20 @@ class System:
         return data_dict
     
 
-    # def Create_Index(self):
-    #     # TODO
-    #     return 
+    def create_index(self,relation_name):
+        # only one primary key
+        primary_key = self.find_primary_key(relation_name)[0]
+        index_tree = OOBTree()
+        for col_idx,primary_key_num in enumerate(self.database_tables[relation_name][primary_key]):
+            index_tree.setdefault(primary_key_num,col_idx)
+        self.table_index[relation_name] = index_tree
+        return 
+    
+    def drop_index(self,relation_name):
+
+        del self.table_index[relation_name]
+        return
+    
     
     # def Drop_Index(self):
     #     # TODO
@@ -548,7 +588,7 @@ if __name__=='__main__':
     # # A1=ATTRIBUTE(*['animal_name','STR',0,True])
     # # A2=ATTRIBUTE(*['animal_age','INT',1,False])
     
-    print(mySystem.open_database('CLASS'))
+    mySystem.open_database('CLASS')
     # print(mySystem.find_primary_key('name_height'))
     # mySystem.delete_data('name_age',0)
     # mySystem.Create_Table('name_age',[['name','String',True],['age','INT',False]])
@@ -571,7 +611,11 @@ if __name__=='__main__':
     # mySystem.Drop_Table('name_age') 
     # mySystem.Drop_Database()
     # mySystem.open_databa
-    print(mySystem.check_duplicates([[1,2,1,4],[2,3,2,5]]))
+    # print(mySystem.check_duplicates([[1,2,1,4],[2,3,2,5]]))
+    mySystem.create_index('name_age')
+    for key, value in mySystem.table_index['name_age'].items():
+        print(key,value)
+    
 
 
 

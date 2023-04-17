@@ -25,5 +25,6 @@ TODO:
 2. 0414的提问2你是不是回答过我了but我忘记了
 3. 我真的热死了 我真的热死了 我真的热死了
 4. 是只有delete有cascade吗啊啊啊啊我还是不会
+5. Create index的grammar
 
 
