@@ -51,8 +51,6 @@ and_flag = False
 # end: database for testing
 
 # SELECT GRAMMAR
-# TODO 语法缺少HAVING join
-# TODO 目前只支持where后面只有一个condition
 SELECT_SQL_Grammar = """
     %import common.CNAME
     %import common.SIGNED_NUMBER
@@ -89,6 +87,8 @@ SELECT_SQL_Grammar = """
     ORDER: "ORDER"i
     SELECT: "SELECT"i
     WHERE: "WHERE"i
+    AVG: "AVG"i
+    COUNT: "COUNT"i
 
 
     char_num: (NAME | NUMBER)*
@@ -113,6 +113,8 @@ SELECT_SQL_Grammar = """
 
     options: where_clause
         | order_by_clause
+        | groupby_clause
+        | theta_join_clause
 
     from_clause: FROM column_table_commalist
 
@@ -144,6 +146,14 @@ SELECT_SQL_Grammar = """
     order_by_commalist: order_by | order_by_commalist COMMA order_by
 
     order_by: column_table asc_desc
+
+    groupby_clause: "GROUP BY" column_table having_clause?
+
+    having_clause: "HAVING" agg_func "(" column_table ")"
+
+    agg_func: AVG | SUM | COUNT | MIN | MAX
+
+    theta_join_clause: "INNER JOIN" column_table "ON" comparison_predicate
 
     asc_desc: ASC | DESC
 
@@ -213,7 +223,7 @@ UPDATE_SQL_Grammar = """
 
     update_clause: column_name "=" new_value
 
-    new_value: CNAME | NUMBER
+    new_value: "'" CNAME "'" | NUMBER
 
     where_clause: "WHERE" search_condition
 
@@ -224,6 +234,7 @@ UPDATE_SQL_Grammar = """
     GT: ">"
     LTE: "<="
     GTE: ">="
+    QUOTE: "'"
     comparison_operator: EQUAL | LT | GT | LTE | GTE
 
     table_name: CNAME
@@ -287,7 +298,7 @@ DELETE_SQL_Grammar = """
 
     column_name: CNAME
     
-    value: CNAME | NUMBER
+    value: "'" CNAME "'" | NUMBER
     
     NUMBER: SIGNED_NUMBER+
 
@@ -305,8 +316,8 @@ class SELECT_tree_Evaluator:
     def get_result(self,datatable):
         self.datatable = datatable
         tree=self.parser.parse(self.query)
-        self.eval_tree(tree)
         print(tree.pretty())
+        self.eval_tree(tree)
         return self.result
 
     def apply(self,token):
@@ -881,7 +892,8 @@ if __name__=='__main__':
 
     mySystem=System()
     mySystem.open_database('CLASS')
-    select_query = "SELECT age FROM name_age WHERE age < 18;" #where的顺序只能跟列表的顺序一致：
+    #select_query = "SELECT age FROM name_age INNER JOIN name_age ON name_age1.name=name_age2.name;"
+    select_query = "SELECT age FROM name_age WHERE name='suzy';" #where的顺序只能跟列表的顺序一致：
     #select_query = "SELECT MAX(age) FROM name_age WHERE name = suzy AND age < 18;"
     SELECT_SQL_EVALUATOR=SELECT_tree_Evaluator(SELECT_SQL_Grammar,select_query)
     print(SELECT_SQL_EVALUATOR.get_result(datatable=mySystem.get_data("name_age")))
@@ -907,7 +919,7 @@ if __name__=='__main__':
 
     # 4. update grammar
     # 0410 tested
-    update_query="UPDATE my_table SET column1 = suzy, column2 = 3 WHERE column3 >= 10;"
+    update_query="UPDATE my_table SET column1 = 'suzy', column2 = 3 WHERE column3 >= 10;"
     UPDATE_SQL_EVALUATOR=UPDATE_tree_Evaluator(UPDATE_SQL_Grammar,update_query)
     print(UPDATE_SQL_EVALUATOR.get_result())
 
