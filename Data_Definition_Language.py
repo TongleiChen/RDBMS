@@ -19,6 +19,7 @@ class System:
         self.table_attributes = {} # dict: "table_1" = {'column_1':['INT','True'],'column_2':['STRING','False']}
         self.database_tables = {}
         self.table_index = {}
+        self.index_table_name = {} #useless right now
 
 
     
@@ -561,17 +562,19 @@ class System:
         return data_dict
     
 
-    def create_index(self,relation_name):
+    def create_index(self,relation_name,index_name):
         # only one primary key
         primary_key = self.find_primary_key(relation_name)[0]
         index_tree = OOBTree()
         for col_idx,primary_key_num in enumerate(self.database_tables[relation_name][primary_key]):
             index_tree.setdefault(primary_key_num,col_idx)
         self.table_index[relation_name] = index_tree
+        self.index_table_name[index_name] = relation_name
+
         return 
     
-    def drop_index(self,relation_name):
-
+    def drop_index(self,relation_name,index_name):
+        del self.index_table_name[index_name]
         del self.table_index[relation_name]
         return
     
