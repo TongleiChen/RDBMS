@@ -15,6 +15,8 @@ ON condition1 <operator> condition2;
 ✅6. query的语法不严谨，name = 'Suzy'要死了 好多要改 要死了 （select✅; create不用; drop不用; update✅; delete✅）
 7. 提问：foreign key是有分cascade和no cascade两种check情况，还是不加cascade也要check并且如果有冲突就报错？
 8. create index语法
+9. where_clause要拆开
+'where_clause': [['name', '=', 'suzy'],'AND',['age', 'BETWEEN', '12', 'AND', '30']] 
 
 select grammar supports:
 SELECT selection from_clause options*

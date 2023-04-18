@@ -110,6 +110,8 @@ SELECT_SQL_Grammar = """
     num_word: column_table
         | LEFT_PAREN num_word RIGHT_PAREN
         | item
+    
+    item: QUOTE char_num QUOTE
 
     options: where_clause
         | order_by_clause
@@ -138,8 +140,6 @@ SELECT_SQL_Grammar = """
     comparison_predicate: num_word comparison num_word
 
     item_commalist: item | item_commalist COMMA item
-
-    item: QUOTE char_num QUOTE
 
     order_by_clause: ORDER BY order_by_commalist
 
@@ -695,14 +695,110 @@ class new_SELECT_tree_Evaluator:
         self.parser = Lark(grammar)
         self.query=query
         self.result=BeautifulTable()
-        self.selection_clause={"cols":[],"agg_fun":[]}
-        self.from_clause={} # table name
-        self.option={"where_clause":{},
-                     "order_by_clause":{},
-                     "group_having_clause":{},
-                     "theta_join_clause":{},
-                     "group_having_clause":{}}
-        
+        self.selection_clause={"cols":[],"agg_fun":[],"all_flag":[False]}
+        self.from_clause=[] # table name
+        self.option={"where_clause":[],
+                     "order_by_clause":[],
+                     "group_having_clause":[],
+                     "theta_join_clause":[],
+                     "group_having_clause":[]}
+    def get_result(self):
+        tree=self.parser.parse(self.query)
+        #print(tree.pretty())
+        self.eval_tree(tree)
+        # TODO to get results
+        print("selection clause: ",self.selection_clause)
+        print("from clause: ",self.from_clause)
+        print("options: ",self.option)
+        ...
+        return self.result    
+    def eval_tree(self,tree):
+        if tree.data=="start":
+            self.eval_tree(tree.children[0]) # select statement
+        elif tree.data=="select_statement":
+            self.eval_tree(tree.children[1]) # selection
+            self.eval_tree(tree.children[2]) # from_clause
+            if len(tree.children)>3:
+                self.eval_tree(tree.children[3])
+        elif tree.data=="selection":
+            self.eval_tree(tree.children[0])
+        elif tree.data=="ALL":
+            self.selection_clause["all_flag"][0]=True
+        elif tree.data=="num_word_commalist": 
+            if len(tree.children)>=3: # num_word_commalist COMMA [max_min] num_word
+                self.eval_tree(tree.children[0])
+                for i in range(1,len(tree.children)):
+                    if tree.children[i]==",":
+                        pass
+                    elif tree.children[i]==None:
+                        self.selection_clause["agg_fun"].append(None)
+                    elif tree.children[i].data=="max_min" or tree.children[i].data=="sum":
+                        self.selection_clause["agg_fun"].append(tree.children[i].children[0].value)
+                    elif tree.children[i].data=="num_word":
+                        if len(tree.children[i].children)==1:
+                            self.selection_clause["cols"].append(tree.children[i].children[0].children[0].children[0].value)
+                        elif len(tree.children[i].children)>1:
+                            self.selection_clause["cols"].append(tree.children[i].children[1].children[0].children[0].children[0].value)
+            else: # [max_min/sum] num_word
+                for i in range(len(tree.children)):
+                    if tree.children[i]==",":
+                        pass
+                    elif tree.children[i]==None:
+                        self.selection_clause["agg_fun"].append(None)
+                    elif tree.children[i].data=="max_min" or tree.children[i].data=="sum":
+                        self.selection_clause["agg_fun"].append(tree.children[i].children[0].value)
+                    elif tree.children[i].data=="num_word":
+                        if len(tree.children[i].children)==1:
+                            self.selection_clause["cols"].append(tree.children[i].children[0].children[0].children[0].value)
+                        elif len(tree.children[i].children)>1:
+                            self.selection_clause["cols"].append(tree.children[i].children[1].children[0].children[0].children[0].value)
+                    
+        elif tree.data=="from_clause":
+            self.eval_tree(tree.children[1])
+        elif tree.data=="column_table_commalist":
+            self.from_clause.append(tree.children[0].children[0].children[0].value)
+        elif tree.data=="options":
+            self.eval_tree(tree.children[0])
+        elif tree.data=="where_clause":
+            self.eval_tree(tree.children[1]) # search condition
+        elif tree.data=="search_condition": # 只在where clause中出现
+            if len(tree.children)==1:
+                self.eval_tree(tree.children[0]) # predict
+            elif len(tree.children)==3: # AND/OR
+                self.eval_tree(tree.children[0]) 
+                self.option["where_clause"].append(tree.children[1].value) # 先把AND OR append 进去
+                self.eval_tree(tree.children[2])
+        elif tree.data=="predicate":
+            self.eval_tree(tree.children[0]) # between_predict / comparison_predict
+        elif tree.data=="between_predicate":
+            print(tree.data)
+            for child in tree.children:
+                # print(child)
+                if child=="BETWEEN" or child=="AND":
+                    self.option["where_clause"].append(child.value)
+                elif child.data=="num_word":
+                    if len(child.children)==1: # column_table/item
+                        if len(child.children[0].children)==1:
+                            self.option["where_clause"].append(child.children[0].children[0].children[0].value)
+                        elif len(child.children[0].children)==3:
+                            self.option["where_clause"].append(child.children[0].children[1].children[0].value)
+                
+        elif tree.data=="comparison_predicate":
+            for child in tree.children: 
+                if child.data=="comparison": 
+                    self.option["where_clause"].append(child.children[0].value)
+                elif child.data=="num_word":
+                    if len(child.children)==1: # column_table/item
+                        if len(child.children[0].children)==1:
+                            self.option["where_clause"].append(child.children[0].children[0].children[0].value)
+                        elif len(child.children[0].children)==3:
+                            self.option["where_clause"].append(child.children[0].children[1].children[0].value)
+                    
+
+
+
+
+
 class UPDATE_tree_Evaluator:
     def __init__(self,grammar,query) -> None:
         self.parser = Lark(grammar)
@@ -906,10 +1002,10 @@ if __name__=='__main__':
     mySystem=System()
     mySystem.open_database('CLASS')
     #select_query = "SELECT age FROM name_age INNER JOIN name_age ON name_age1.name=name_age2.name;"
-    select_query = "SELECT age FROM name_age WHERE name='suzy';" #where的顺序只能跟列表的顺序一致：
+    select_query = "SELECT age,MAX(name),name FROM name_age WHERE name='suzy' AND age BETWEEN 12 AND 30;" #where的顺序只能跟列表的顺序一致：
     #select_query = "SELECT MAX(age) FROM name_age WHERE name = suzy AND age < 18;"
-    SELECT_SQL_EVALUATOR=SELECT_tree_Evaluator(SELECT_SQL_Grammar,select_query)
-    print(SELECT_SQL_EVALUATOR.get_result(datatable=mySystem.get_data("name_age")))
+    SELECT_SQL_EVALUATOR=new_SELECT_tree_Evaluator(SELECT_SQL_Grammar,select_query)
+    print(SELECT_SQL_EVALUATOR.get_result())
 
     
     # 2. create grammar
