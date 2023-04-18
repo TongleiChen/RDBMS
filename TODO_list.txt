@@ -13,4 +13,5 @@
 10. (Is there any way to apply ">" "<" "=" directly into "if" condition??? ) (用不着了)
 11. conjunctive and disjunctive 
 12. (✅ BUT USELESS) INDEX should have their name. 
+13. Join projection has grammar like select table1.column1,table2.column2 where ... 
 -1. 活着
