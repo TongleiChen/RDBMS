@@ -1,0 +1,6 @@
+虔诚地开一个文档
+select 到底是个什么顺序我真的谢谢啊啊啊😨
+0417: 
+1. (NOT TESTED)JOIN: nested loop join, with column projection, without apply functions, i.e., SUM, MAX...
+2. GROUP BY: multiple key ???
+3. ORDER BY: multiple key ??? ===> one key is enough😇, dont know how to sort by multiple key

@@ -19,6 +19,7 @@ class System:
         self.table_attributes = {} # dict: "table_1" = {'column_1':['INT','True'],'column_2':['STRING','False']}
         self.database_tables = {}
         self.table_index = {}
+        self.index_table_name = {} #useless right now
 
 
     
@@ -561,24 +562,129 @@ class System:
         return data_dict
     
 
-    def create_index(self,relation_name):
+    def create_index(self,relation_name,index_name):
         # only one primary key
         primary_key = self.find_primary_key(relation_name)[0]
         index_tree = OOBTree()
         for col_idx,primary_key_num in enumerate(self.database_tables[relation_name][primary_key]):
             index_tree.setdefault(primary_key_num,col_idx)
         self.table_index[relation_name] = index_tree
+        self.index_table_name[index_name] = relation_name
+
         return 
     
-    def drop_index(self,relation_name):
-
+    def drop_index(self,relation_name,index_name):
+        del self.index_table_name[index_name]
         del self.table_index[relation_name]
         return
     
+    def get_row_num(self,relation_name):
+        first_attri = self.get_column_list(relation_name)[0]
+
+        total_number_row = len(self.database_tables[relation_name][first_attri])
+
+        return total_number_row
+    #####################################################
+    ############    虔诚地给select开辟一块地    ############
+    #####################################################
+
+    def select_data(self,selection_clause,from_clause,option):
+        select_columns = selection_clause['cols']
+        col_functions = selection_clause['agg_fun']
+        # theta_join = option['theta_join_clause']
+
+    def nested_loop_join(self,table_1:str, table_1_col:str, operation, table_2:str, table_2_col:str,projection_cols_1:list,projection_cols_2:list):
+        row_num_1 = self.get_row_num(table_1)
+        row_num_2 = self.get_row_num(table_2)
+        new_table = {}  # structure similar to self.database_tables[relation_name] {'column_1':[],'column_2':[]}
+        for c_1 in projection_cols_1:
+            new_table[c_1] = []
+        for c_2 in projection_cols_2:
+            new_table[c_2] = []
+        
+        for r_1 in range(row_num_1):
+            value_1 = self.database_tables[table_1][table_1_col][r_1]
+            for r_2 in range(row_num_2):
+                value_2 = self.database_tables[table_2][table_2_col][r_2]
+                if operation == ">":
+                    if value_1 > value_2:
+                        pass
+                    else:
+                        continue
+                elif operation == ">=":
+                    if value_1 >= value_2:
+                        pass
+                    else:
+                        continue
+                elif operation == "=":
+                    if value_1 == value_2:
+                        pass
+                    else:
+                        continue
+                elif operation == "<=":
+                    if value_1 <= value_2:
+                        pass
+                    else:
+                        continue
+                elif operation == "<":
+                    if value_1 < value_2:
+                        pass
+                    else:
+                        continue
+                 # when come to this line, join two tables
+                for c_1 in projection_cols_1:
+                    new_table[c_1].append(self.database_tables[table_1][r_1])
+                for c_2 in projection_cols_2:
+                    new_table[c_2].append(self.database_tables[table_2][r_2])
+                
+        return new_table
     
-    # def Drop_Index(self):
-    #     # TODO
-    #     return
+
+    def order_by(self,table_data:dict,order_cols:list,sort:str):
+        # there should be only one key in order_col right now
+        new_table = {}
+        for column in table_data.keys():
+            new_table[column] = []
+        order_list = []
+        order_col = order_cols[0]
+        row_number = len(table_data[order_col]) # get the number of rows(how many lines of data)
+        for i in range(row_number):
+            # for column in order_cols:
+            order_list.append((table_data[order_col][i],i))
+        if sort == "ASC":
+            sorted_order_list = sorted(order_list,key = lambda x:x[0])
+        else:# DESC
+            sorted_order_list = sorted(order_list,key = lambda x:x[0], reverse=True)
+        for val,idx in sorted_order_list:
+            for column in table_data.keys():
+                new_table[column].append(table_data[column][idx])
+        return new_table
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    #####################################################
+    #################    select 结束    ##################
+    #####################################################
 
 if __name__=='__main__':
     mySystem=System()
@@ -616,6 +722,8 @@ if __name__=='__main__':
     for key, value in mySystem.table_index['name_age'].items():
         print(key,value)
     
+
+
 
 
 

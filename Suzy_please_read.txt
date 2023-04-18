@@ -9,7 +9,7 @@ Minimum of a 2-table theta-join:1. 对两张表进行笛卡尔积；2. 在得到
 ********************************************
 SELECT column1, column2, ...
 FROM table1
-[INNER | LEFT | RIGHT | FULL] JOIN table2
+INNER JOIN table2
 ON condition1 <operator> condition2;
 ********************************************
 ✅6. query的语法不严谨，name = 'Suzy'要死了 好多要改 要死了 （select✅; create不用; drop不用; update✅; delete✅）

@@ -2,13 +2,16 @@
 2. How to store Foreign key. Foreign key with insert, delete and update cascade
 3. Create Index: 
     (1). select with index. 
-    (2). When insert, delete and update, update index. 
+    (2). (NOT TESTED) When insert, delete and update, update index. 
 4. Execution: JOIN: sorted merge and nested loop join
+    inner join only
 5. (✅) Test update function
 6. (✅) Link create, drop, delete sql to Data_Definition_Language system.
 7. (✅) Edit insert. 
 8. Decide when to write in disk, i.e., csv file.
 9. SELECT!!!
-10. (Is there any way to apply ">" "<" "=" directly into "if" condition??? )
-11. conjunctive and disjunctive
+10. (Is there any way to apply ">" "<" "=" directly into "if" condition??? ) (用不着了)
+11. conjunctive and disjunctive 
+12. (✅ BUT USELESS) INDEX should have their name. 
+13. Join projection has grammar like select table1.column1,table2.column2 where ... 
 -1. 活着
