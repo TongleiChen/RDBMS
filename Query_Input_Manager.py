@@ -1173,10 +1173,13 @@ if __name__=='__main__':
     select_query = """
     SELECT name,height
     FROM name_height
-    ORDER BY height ASC;
+    WHERE height < 165 OR height = 170;
     """
     #select_query = "SELECT MAX(age) FROM name_age WHERE name = suzy AND age < 18;"
     SELECT_SQL_EVALUATOR_new=new_SELECT_tree_Evaluator(SELECT_SQL_Grammar,select_query)
     print(SELECT_SQL_EVALUATOR_new.get_result())
 
-    print(mySystem.order_by(mySystem.database_tables[SELECT_SQL_EVALUATOR_new.from_clause[0]],order_cols=[SELECT_SQL_EVALUATOR_new.option['order_by_clause'][0]],sort=SELECT_SQL_EVALUATOR_new.option['order_by_clause'][1]))
+    # output = mySystem.order_by(mySystem.database_tables[SELECT_SQL_EVALUATOR_new.from_clause[0]],order_cols=[SELECT_SQL_EVALUATOR_new.option['order_by_clause'][0]],sort=SELECT_SQL_EVALUATOR_new.option['order_by_clause'][1])
+
+    # print(mySystem.projection(output,SELECT_SQL_EVALUATOR_new.selection_clause['cols']))
+    print(mySystem.select_where(SELECT_SQL_EVALUATOR_new.from_clause[0],SELECT_SQL_EVALUATOR_new.option['where_clause']))

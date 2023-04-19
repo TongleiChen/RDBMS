@@ -6,4 +6,4 @@ select 到底是个什么顺序我真的谢谢啊啊啊😨
 也就是说select的order by group by where 谁在后面谁就用不到index了???
 2. GROUP BY: multiple key ???
 3. ORDER BY: multiple key ??? ===> one key is enough😇, dont know how to sort by multiple key
-4. WHERE: 
+4. WHERE: can only be numbers?
