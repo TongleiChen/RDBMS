@@ -1,4 +1,7 @@
 😭
+Grammar note:
+options: where_clause* groupby_clause* order_by_clause*
+| theta_join_clause* where_clause* order_by_clause*
 直到0416: 
 ✅1. UPDATE 可以只pass string 给我 不转换成int没关系的 就和你的insert差不多？
 ✅2. 整理一下select的语法树 等待ctl跟我会议 
@@ -15,8 +18,7 @@ ON condition1 <operator> condition2;
 ✅6. query的语法不严谨，name = 'Suzy'要死了 好多要改 要死了 （select✅; create不用; drop不用; update✅; delete✅）
 7. 提问：foreign key是有分cascade和no cascade两种check情况，还是不加cascade也要check并且如果有冲突就报错？
 8. create index语法
-9. where_clause要拆开
-'where_clause': [['name', '=', 'suzy'],'AND',['age', 'BETWEEN', '12', 'AND', '30']] 
+✅9. where_clause要拆开 'where_clause': [['name', '=', 'suzy'],'AND',['age', 'BETWEEN', '12', 'AND', '30']] 
 
 select grammar supports:
 SELECT selection from_clause options*
@@ -27,11 +29,6 @@ options:    where_clause: WHERE condition1 (AND/OR condition2)| age BETWEEN 2 AN
     | group_having_clause
     | theta_join_clause
     | group_having_clause: 
-
-TODO:
-1. 加GROUP BY-HAVING condition
-2. HAVING SUM() COUNT() AVG() MAX() MIN()
-
 
 0415:
 1. 你传给我的CREATE_tree_Evaluator里面的table_name是Token('CNAME', 'customers')这样的。能不能只要一个table的string哇

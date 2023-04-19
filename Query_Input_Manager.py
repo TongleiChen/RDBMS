@@ -113,10 +113,8 @@ SELECT_SQL_Grammar = """
     
     item: QUOTE char_num QUOTE
 
-    options: where_clause
-        | order_by_clause
-        | groupby_clause
-        | theta_join_clause
+    options: where_clause* groupby_clause* order_by_clause*
+            | theta_join_clause* where_clause* order_by_clause*
 
     from_clause: FROM column_table_commalist
 
@@ -143,13 +141,11 @@ SELECT_SQL_Grammar = """
 
     order_by_clause: ORDER BY order_by_commalist
 
-    order_by_commalist: order_by | order_by_commalist COMMA order_by
-
-    order_by: column_table asc_desc
+    order_by_commalist: column_table asc_desc
 
     groupby_clause: "GROUP BY" column_table having_clause?
 
-    having_clause: "HAVING" agg_func "(" column_table ")"
+    having_clause: "HAVING" agg_func "(" column_table ")" comparison num_word
 
     agg_func: AVG | SUM | COUNT | MIN | MAX
 
@@ -695,7 +691,7 @@ class new_SELECT_tree_Evaluator:
         self.parser = Lark(grammar)
         self.query=query
         self.result=BeautifulTable()
-        self.selection_clause={"cols":[],"agg_fun":[],"all_flag":[False]}
+        self.selection_clause={"tables":[],"cols":[],"agg_fun":[],"all_flag":[False]}
         self.from_clause=[] # table name
         self.option={"where_clause":[],
                      "order_by_clause":[],
@@ -704,7 +700,7 @@ class new_SELECT_tree_Evaluator:
                      "group_having_clause":[]}
     def get_result(self):
         tree=self.parser.parse(self.query)
-        #print(tree.pretty())
+        # print(tree.pretty())
         self.eval_tree(tree)
         # TODO to get results
         print("selection clause: ",self.selection_clause)
@@ -736,8 +732,15 @@ class new_SELECT_tree_Evaluator:
                         self.selection_clause["agg_fun"].append(tree.children[i].children[0].value)
                     elif tree.children[i].data=="num_word":
                         if len(tree.children[i].children)==1:
-                            self.selection_clause["cols"].append(tree.children[i].children[0].children[0].children[0].value)
+                            if len(tree.children[i].children[0].children)==1: # column_table-char_num
+                                if self.from_clause==[]:self.selection_clause["tables"].append(None)
+                                self.selection_clause["cols"].append(tree.children[i].children[0].children[0].children[0].value)
+                            elif len(tree.children[i].children[0].children)==3: # column_table-"."
+                                self.selection_clause["tables"].append(tree.children[i].children[0].children[0].children[0].value)
+                                self.selection_clause["cols"].append(tree.children[i].children[0].children[2].children[0].value)
+
                         elif len(tree.children[i].children)>1:
+                            if self.from_clause==[]:self.selection_clause["tables"].append(None)
                             self.selection_clause["cols"].append(tree.children[i].children[1].children[0].children[0].children[0].value)
             else: # [max_min/sum] num_word
                 for i in range(len(tree.children)):
@@ -748,9 +751,15 @@ class new_SELECT_tree_Evaluator:
                     elif tree.children[i].data=="max_min" or tree.children[i].data=="sum":
                         self.selection_clause["agg_fun"].append(tree.children[i].children[0].value)
                     elif tree.children[i].data=="num_word":
-                        if len(tree.children[i].children)==1:
-                            self.selection_clause["cols"].append(tree.children[i].children[0].children[0].children[0].value)
-                        elif len(tree.children[i].children)>1:
+                        if len(tree.children[i].children)==1: # column_table
+                            if len(tree.children[i].children[0].children)==1: # column_table-char_num
+                                if self.from_clause==[]:self.selection_clause["tables"].append(None)
+                                self.selection_clause["cols"].append(tree.children[i].children[0].children[0].children[0].value)
+                            elif len(tree.children[i].children[0].children)==3: # column_table-"."
+                                self.selection_clause["tables"].append(tree.children[i].children[0].children[0].children[0].value)
+                                self.selection_clause["cols"].append(tree.children[i].children[0].children[2].children[0].value)
+                        elif len(tree.children[i].children)>1: # LEFT_PAREN num_word RIGHT_PAREN
+                            if self.from_clause==[]:self.selection_clause["tables"].append(None)
                             self.selection_clause["cols"].append(tree.children[i].children[1].children[0].children[0].children[0].value)
                     
         elif tree.data=="from_clause":
@@ -758,7 +767,9 @@ class new_SELECT_tree_Evaluator:
         elif tree.data=="column_table_commalist":
             self.from_clause.append(tree.children[0].children[0].children[0].value)
         elif tree.data=="options":
-            self.eval_tree(tree.children[0])
+            # print(len(tree.children))
+            for child in tree.children:
+                self.eval_tree(child)
         elif tree.data=="where_clause":
             self.eval_tree(tree.children[1]) # search condition
         elif tree.data=="search_condition": # 只在where clause中出现
@@ -771,33 +782,70 @@ class new_SELECT_tree_Evaluator:
         elif tree.data=="predicate":
             self.eval_tree(tree.children[0]) # between_predict / comparison_predict
         elif tree.data=="between_predicate":
-            print(tree.data)
+            temp=[]
             for child in tree.children:
-                # print(child)
                 if child=="BETWEEN" or child=="AND":
-                    self.option["where_clause"].append(child.value)
+                    temp.append(child.value)
                 elif child.data=="num_word":
                     if len(child.children)==1: # column_table/item
                         if len(child.children[0].children)==1:
-                            self.option["where_clause"].append(child.children[0].children[0].children[0].value)
+                            temp.append(child.children[0].children[0].children[0].value)
                         elif len(child.children[0].children)==3:
-                            self.option["where_clause"].append(child.children[0].children[1].children[0].value)
-                
-        elif tree.data=="comparison_predicate":
+                            temp.append(child.children[0].children[1].children[0].value)
+            self.option["where_clause"].append(temp)
+
+        elif tree.data=="comparison_predicate": # 只针对于where clause的
+            temp=[]
             for child in tree.children: 
                 if child.data=="comparison": 
-                    self.option["where_clause"].append(child.children[0].value)
+                    temp.append(child.children[0].value)
                 elif child.data=="num_word":
                     if len(child.children)==1: # column_table/item
                         if len(child.children[0].children)==1:
-                            self.option["where_clause"].append(child.children[0].children[0].children[0].value)
+                            temp.append(child.children[0].children[0].children[0].value)
                         elif len(child.children[0].children)==3:
-                            self.option["where_clause"].append(child.children[0].children[1].children[0].value)
-                    
-
-
-
-
+                            temp.append(child.children[0].children[1].children[0].value)
+            self.option["where_clause"].append(temp)      
+        elif tree.data=="order_by_clause":
+            self.eval_tree(tree.children[2]) # order_by_commalist
+        elif tree.data=="order_by_commalist":
+            # print(tree.children[1].children[0].value)
+            self.option["order_by_clause"].append(tree.children[0].children[0].children[0].value)
+            self.option["order_by_clause"].append(tree.children[1].children[0].value)
+        elif tree.data=="groupby_clause":
+            self.option["group_having_clause"].append(tree.children[0].children[0].children[0].value) # column_table
+            if len(tree.children)>=2: # "GROUP BY" column_table having_clause 
+                self.eval_tree(tree.children[1])
+        elif tree.data=="having_clause":
+            for child in tree.children:
+                if child.data=="agg_func":
+                    self.option["group_having_clause"].append(child.children[0].value)
+                elif child.data=="column_table":
+                    self.option["group_having_clause"].append(child.children[0].children[0].value) # column_table
+                elif child.data=="comparison":
+                    self.option["group_having_clause"].append(child.children[0].value)
+                elif child.data=="num_word":
+                    if len(child.children)==1: # column_table/item
+                        if len(child.children[0].children)==1:
+                            self.option["group_having_clause"].append(child.children[0].children[0].children[0].value)
+                        elif len(child.children[0].children)==3:
+                            self.option["group_having_clause"].append(child.children[0].children[1].children[0].value)
+        elif tree.data=="theta_join_clause":
+            # INNER JOIN name_address 
+            # ON name_age.name = name_address.name 
+            for child in tree.children:
+                if child.data=="column_table":
+                    self.option["theta_join_clause"].append(child.children[0].children[0].value)
+                elif child.data=="comparison_predicate":
+                    # print("comparison_predicate")
+                    # name_age.name = name_address.name
+                    for child in child.children: 
+                        if child.data=="comparison": 
+                            # print(child.children[0].value)
+                            self.option["theta_join_clause"].append(child.children[0].value)
+                        elif child.data=="num_word":
+                            self.option["theta_join_clause"].append(child.children[0].children[0].children[0].value)
+                            self.option["theta_join_clause"].append(child.children[0].children[2].children[0].value)
 
 class UPDATE_tree_Evaluator:
     def __init__(self,grammar,query) -> None:
@@ -998,11 +1046,19 @@ class CREATE_tree_Evaluator:
 if __name__=='__main__':
     # 1. select grammar
     # 0410 tested
-
     mySystem=System()
     mySystem.open_database('CLASS')
     #select_query = "SELECT age FROM name_age INNER JOIN name_age ON name_age1.name=name_age2.name;"
-    select_query = "SELECT age,MAX(name),name FROM name_age WHERE name='suzy' AND age BETWEEN 12 AND 30;" #where的顺序只能跟列表的顺序一致：
+    #select_query = "SELECT age,MAX(name),name FROM name_age WHERE name='suzy' AND age BETWEEN 12 AND 30;" #where的顺序只能跟列表的顺序一致：
+    #select_query = "SELECT age,name FROM name_age WHERE name='suzy' AND age BETWEEN 12 AND 30 GROUP BY name HAVING SUM(age)>100 ORDER BY age ASC ;"
+    select_query = """
+    SELECT name_age.age,name_address.address 
+    FROM name_age 
+    INNER JOIN name_address 
+    ON name_age.name = name_address.name 
+    WHERE name='suzy' AND age BETWEEN 12 AND 30 
+    ORDER BY age ASC;
+    """
     #select_query = "SELECT MAX(age) FROM name_age WHERE name = suzy AND age < 18;"
     SELECT_SQL_EVALUATOR=new_SELECT_tree_Evaluator(SELECT_SQL_Grammar,select_query)
     print(SELECT_SQL_EVALUATOR.get_result())
