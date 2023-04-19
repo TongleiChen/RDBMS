@@ -1150,3 +1150,34 @@ if __name__=='__main__':
     print(mySystem.database_tables)
 
 
+
+    select_query = """
+    SELECT name_age.age,name_height.height 
+    FROM name_age 
+    INNER JOIN name_height 
+    ON name_age.name = name_height.name;
+    """
+    #select_query = "SELECT MAX(age) FROM name_age WHERE name = suzy AND age < 18;"
+    SELECT_SQL_EVALUATOR=new_SELECT_tree_Evaluator(SELECT_SQL_Grammar,select_query)
+    print(SELECT_SQL_EVALUATOR.get_result())
+    print("table_1",SELECT_SQL_EVALUATOR.from_clause[0])
+    print("projection_cols_1",[SELECT_SQL_EVALUATOR.selection_clause['cols'][0]])
+    print(mySystem.nested_loop_join(SELECT_SQL_EVALUATOR.from_clause[0],
+                              table_1_col=SELECT_SQL_EVALUATOR.option['theta_join_clause'][2],
+                            table_2 = SELECT_SQL_EVALUATOR.option['theta_join_clause'][0],
+                            table_2_col=SELECT_SQL_EVALUATOR.option['theta_join_clause'][5],
+                            projection_cols_1=[SELECT_SQL_EVALUATOR.selection_clause['cols'][0]],
+                            projection_cols_2=[SELECT_SQL_EVALUATOR.selection_clause['cols'][1]]
+                            ))
+    
+    select_query = """
+    SELECT height
+    FROM name_height
+    ORDER BY height DESC;
+    """
+    #select_query = "SELECT MAX(age) FROM name_age WHERE name = suzy AND age < 18;"
+    SELECT_SQL_EVALUATOR=new_SELECT_tree_Evaluator(SELECT_SQL_Grammar,select_query)
+    print(SELECT_SQL_EVALUATOR.get_result())
+
+    # print(SELECT_SQL_EVALUATOR.option)
+    # print(mySystem.order_by(mySystem.database_tables[SELECT_SQL_EVALUATOR.from_clause[0]],order_cols=[SELECT_SQL_EVALUATOR.option['order_by_clause'][0]],sort=SELECT_SQL_EVALUATOR.option['order_by_clause'][1]))

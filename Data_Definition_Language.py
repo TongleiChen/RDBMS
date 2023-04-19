@@ -595,6 +595,9 @@ class System:
 
     def nested_loop_join(self,table_1:str, table_1_col:str, table_2:str, table_2_col:str,projection_cols_1:list,projection_cols_2:list):
         # only support join grammar like "SELECT table_1.column, table_2.column from table_1 INNER JOIN table_2 ON table_1.column2 = table_2.column2"
+
+
+        # YUNI 0419 TESTED!
         row_num_1 = self.get_row_num(table_1)
         row_num_2 = self.get_row_num(table_2)
         new_table = {}  # structure similar to self.database_tables[relation_name] {'column_1':[],'column_2':[]}
@@ -613,15 +616,16 @@ class System:
                     continue
                  # when come to this line, join two tables
                 for c_1 in projection_cols_1:
-                    new_table[c_1].append(self.database_tables[table_1][r_1])
+                    new_table[c_1].append(self.database_tables[table_1][c_1][r_1])
                 for c_2 in projection_cols_2:
-                    new_table[c_2].append(self.database_tables[table_2][r_2])
+                    new_table[c_2].append(self.database_tables[table_2][c_2][r_2])
                 
         return new_table
     
 
 
     def order_by(self,table_data:dict,order_cols:list,sort:str):
+        
         # there should be only one key in order_col right now
         new_table = {}
         for column in table_data.keys():
