@@ -91,7 +91,7 @@ SELECT_SQL_Grammar = """
     COUNT: "COUNT"i
 
 
-    char_num: (NAME | NUMBER)*
+    char_num: (NAME | NUMBER)
 
     start: [select_statement end]
 
@@ -1171,13 +1171,12 @@ if __name__=='__main__':
                             ))
     
     select_query = """
-    SELECT height
+    SELECT name,height
     FROM name_height
-    ORDER BY height DESC;
+    ORDER BY height ASC;
     """
     #select_query = "SELECT MAX(age) FROM name_age WHERE name = suzy AND age < 18;"
-    SELECT_SQL_EVALUATOR=new_SELECT_tree_Evaluator(SELECT_SQL_Grammar,select_query)
-    print(SELECT_SQL_EVALUATOR.get_result())
+    SELECT_SQL_EVALUATOR_new=new_SELECT_tree_Evaluator(SELECT_SQL_Grammar,select_query)
+    print(SELECT_SQL_EVALUATOR_new.get_result())
 
-    # print(SELECT_SQL_EVALUATOR.option)
-    # print(mySystem.order_by(mySystem.database_tables[SELECT_SQL_EVALUATOR.from_clause[0]],order_cols=[SELECT_SQL_EVALUATOR.option['order_by_clause'][0]],sort=SELECT_SQL_EVALUATOR.option['order_by_clause'][1]))
+    print(mySystem.order_by(mySystem.database_tables[SELECT_SQL_EVALUATOR_new.from_clause[0]],order_cols=[SELECT_SQL_EVALUATOR_new.option['order_by_clause'][0]],sort=SELECT_SQL_EVALUATOR_new.option['order_by_clause'][1]))
