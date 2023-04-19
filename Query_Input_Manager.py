@@ -158,7 +158,7 @@ SELECT_SQL_Grammar = """
     sum: SUM
 """
 # CREATE GRAMMAR
-CREATE_SQL_Grammar = """
+CREATE_TABLE_SQL_Grammar = """
     %import common.CNAME
     %import common.SIGNED_NUMBER
     %import common.WS
@@ -189,7 +189,7 @@ CREATE_SQL_Grammar = """
 
 """
 # DROP GRAMMAR
-DROP_SQL_Grammar = """
+DROP_TABLE_SQL_Grammar = """
     %import common.CNAME
     %import common.SIGNED_NUMBER
     %import common.WS
@@ -302,6 +302,88 @@ DELETE_SQL_Grammar = """
 
 """
 
+CREATE_INDEX_SQL_Grammar = """
+    %import common.CNAME
+    %import common.SIGNED_NUMBER
+    %import common.WS
+    %ignore WS
+    start: [create_index_statement end]
+
+    create_index_statement: "CREATE" "INDEX" index_name "ON" table_name "(" column_name ")"
+
+    index_name: CNAME
+    table_name: CNAME
+    column_name: CNAME
+    
+    end: ";"
+"""
+
+DROP_INDEX_SQL_Grammar = """
+    %import common.CNAME
+    %import common.SIGNED_NUMBER
+    %import common.WS
+    %ignore WS
+    start: [drop_index_statement end]
+
+    drop_index_statement: "DROP" "INDEX" index_name
+
+    index_name: CNAME
+    
+    end: ";"
+"""
+
+class DROP_INDEX_tree_Evaluator:
+    def __init__(self,grammar,query) -> None:
+        self.parser = Lark(grammar)
+        self.query=query
+        self.result=BeautifulTable()
+        self.index_name=None # Name of index being dropped
+        
+    def get_result(self):
+        tree=self.parser.parse(self.query)
+        self.eval_tree(tree)
+        # TODO to get results
+        print("drop index name: ",self.index_name)
+        ...
+        return self.result
+    
+    def eval_tree(self,tree):
+        if tree.data=="start":
+            self.eval_tree(tree.children[0])
+        elif tree.data=="drop_index_statement":
+            self.index_name=tree.children[0].children[0].value
+        else:
+            raise ValueError(f"Invalid syntax query")
+
+class CREATE_INDEX_tree_Evaluator:
+    def __init__(self,grammar,query) -> None:
+        self.parser = Lark(grammar)
+        self.query=query
+        self.result=BeautifulTable()
+        self.index_name=None # Name of index being create
+        self.table_name=None # Name of index being create
+        self.column_name=None # Name of index being create
+        
+    def get_result(self):
+        tree=self.parser.parse(self.query)
+        self.eval_tree(tree)
+        # TODO to get results
+        print("index name: ",self.index_name)
+        print("table name: ",self.table_name)
+        print("column name: ",self.column_name)
+        ...
+        return self.result
+    def eval_tree(self,tree):
+        if tree.data=="start":
+            self.eval_tree(tree.children[0])
+        elif tree.data=="create_index_statement":
+            # create_index_statement: "CREATE" "INDEX" index_name "ON" table_name "(" column_name ")"
+            self.index_name=tree.children[0].children[0].value
+            self.table_name=tree.children[1].children[0].value
+            self.column_name=tree.children[2].children[0].value
+        else:
+            raise ValueError(f"Invalid syntax query")
+        
 class SELECT_tree_Evaluator:
     def __init__(self,grammar,query) -> None:
         self.parser = Lark(grammar)
@@ -767,7 +849,6 @@ class new_SELECT_tree_Evaluator:
         elif tree.data=="column_table_commalist":
             self.from_clause.append(tree.children[0].children[0].children[0].value)
         elif tree.data=="options":
-            # print(len(tree.children))
             for child in tree.children:
                 self.eval_tree(child)
         elif tree.data=="where_clause":
@@ -805,17 +886,21 @@ class new_SELECT_tree_Evaluator:
                             temp.append(child.children[0].children[0].children[0].value)
                         elif len(child.children[0].children)==3:
                             temp.append(child.children[0].children[1].children[0].value)
-            self.option["where_clause"].append(temp)      
+            self.option["where_clause"].append(temp)     
+
         elif tree.data=="order_by_clause":
             self.eval_tree(tree.children[2]) # order_by_commalist
+
         elif tree.data=="order_by_commalist":
             # print(tree.children[1].children[0].value)
             self.option["order_by_clause"].append(tree.children[0].children[0].children[0].value)
             self.option["order_by_clause"].append(tree.children[1].children[0].value)
+
         elif tree.data=="groupby_clause":
             self.option["group_having_clause"].append(tree.children[0].children[0].children[0].value) # column_table
             if len(tree.children)>=2: # "GROUP BY" column_table having_clause 
                 self.eval_tree(tree.children[1])
+
         elif tree.data=="having_clause":
             for child in tree.children:
                 if child.data=="agg_func":
@@ -830,9 +915,8 @@ class new_SELECT_tree_Evaluator:
                             self.option["group_having_clause"].append(child.children[0].children[0].children[0].value)
                         elif len(child.children[0].children)==3:
                             self.option["group_having_clause"].append(child.children[0].children[1].children[0].value)
+                            
         elif tree.data=="theta_join_clause":
-            # INNER JOIN name_address 
-            # ON name_age.name = name_address.name 
             for child in tree.children:
                 if child.data=="column_table":
                     self.option["theta_join_clause"].append(child.children[0].children[0].value)
@@ -896,7 +980,7 @@ class UPDATE_tree_Evaluator:
         else:
             raise ValueError(f"Invalid syntax query")
 
-class DROP_tree_Evaluator:
+class DROP_TABLE_tree_Evaluator:
     def __init__(self,grammar,query) -> None:
         self.parser = Lark(grammar)
         self.query=query
@@ -1008,7 +1092,7 @@ class DELETE_tree_Evaluator:
         else:
             raise ValueError(f"Invalid syntax query")
         
-class CREATE_tree_Evaluator:
+class CREATE_TABLE_tree_Evaluator:
     def __init__(self,grammar,query) -> None:
         self.parser = Lark(grammar)
         self.query=query
@@ -1042,9 +1126,49 @@ class CREATE_tree_Evaluator:
 
         else:
             raise ValueError(f"Invalid syntax query")
+
+def GET_EVALUATOR_from_Query(query):
+        EVALUATOR=None
+        query_list=query.split(" ")
+        option=query_list[0]
+        if option=="CREATE" or option=="DROP":
+            option+=query_list[1]
         
+        if option=="SELECT":
+            EVALUATOR=new_SELECT_tree_Evaluator(SELECT_SQL_Grammar,query)
+        elif option=="CREATETABLE":
+            EVALUATOR=CREATE_TABLE_tree_Evaluator(CREATE_TABLE_SQL_Grammar,query)
+        elif option=="DROPTABLE":
+            EVALUATOR=DROP_TABLE_tree_Evaluator(DROP_TABLE_SQL_Grammar,query)
+        elif option=="UPDATE":
+            EVALUATOR=UPDATE_tree_Evaluator(UPDATE_SQL_Grammar,query)
+        elif option=="INSERT":
+            EVALUATOR=INSERT_tree_Evaluator(INSERT_SQL_Grammar,query)
+        elif option=="CREATEINDEX":
+            EVALUATOR=CREATE_INDEX_tree_Evaluator(CREATE_INDEX_SQL_Grammar,query)
+        elif option=="DROPINDEX":
+            EVALUATOR=DROP_INDEX_tree_Evaluator(DROP_INDEX_SQL_Grammar,query)
+        else:
+            raise ValueError(f"Invalid syntax query")
+        
+        return EVALUATOR
 
 if __name__=='__main__':
+    #test_query="SELECT age FROM name_age INNER JOIN name_age ON name_age1.name=name_age2.name;"
+    #test_query="CREATE TABLE customers (id INT PRIMARY KEY,name VARCHAR(50) NOT NULL,age INT PRIMARY KEY,email VARCHAR(100) NOT NULL);"
+    #test_query="DROP TABLE customers;"
+    #test_query="UPDATE my_table SET column1 = 'suzy', column2 = 3 WHERE column3 >= 10;"
+    #test_query="INSERT INTO name_age (name, age) VALUES ('John', 30);"
+    #test_query="CREATE INDEX index_nameON table_name (column_name);"
+    #test_query="DROP INDEX index_name ON table_name;"
+    #test_query="CREATE INDEX index_name ON name_age (name);"
+    test_query="DROP INDEX index_name;"
+    EVALUATOR=GET_EVALUATOR_from_Query(test_query)
+    print(EVALUATOR.get_result())
+
+
+
+
     # 1. select grammar
     # 0410 tested
     mySystem=System()
@@ -1060,6 +1184,7 @@ if __name__=='__main__':
     WHERE name='suzy' AND age BETWEEN 12 AND 30 
     ORDER BY age ASC;
     """
+    #select_query ="SELECT height FROM name_height ORDER BY height DESC;"
     #select_query = "SELECT MAX(age) FROM name_age WHERE name = suzy AND age < 18;"
     SELECT_SQL_EVALUATOR=new_SELECT_tree_Evaluator(SELECT_SQL_Grammar,select_query)
     print(SELECT_SQL_EVALUATOR.get_result())
@@ -1074,7 +1199,7 @@ if __name__=='__main__':
     email VARCHAR(100) NOT NULL
     );
     """
-    CREATE_SQL_EVALUATOR=CREATE_tree_Evaluator(CREATE_SQL_Grammar,create_query)
+    CREATE_SQL_EVALUATOR=CREATE_TABLE_tree_Evaluator(CREATE_TABLE_SQL_Grammar,create_query)
     print(CREATE_SQL_EVALUATOR.get_result())
     mySystem.create_table_dict(CREATE_SQL_EVALUATOR.table_name.value,CREATE_SQL_EVALUATOR.attributes_clause)
     print(mySystem.database_tables)
@@ -1084,7 +1209,7 @@ if __name__=='__main__':
     # 3. drop grammar
     # 0410 tested
     drop_query="DROP TABLE customers;"
-    DROP_SQL_EVALUATOR=DROP_tree_Evaluator(DROP_SQL_Grammar,drop_query)
+    DROP_SQL_EVALUATOR=DROP_TABLE_tree_Evaluator(DROP_TABLE_SQL_Grammar,drop_query)
     print(DROP_SQL_EVALUATOR.get_result())
     print(DROP_SQL_EVALUATOR.table_name)
     mySystem.drop_table_dict(DROP_SQL_EVALUATOR.table_name)
@@ -1120,8 +1245,6 @@ if __name__=='__main__':
     mySystem.delete_data_dict(DELETE_SQL_EVALUATOR.table_name,DELETE_SQL_EVALUATOR.where_clause)
     print(mySystem.database_tables)
 
-
-
     # update_query_2 = "UPDATE name_height SET height = 160 WHERE name = 'suzy';"
     # UPDATE_SQL_EVALUATOR_2=UPDATE_tree_Evaluator(UPDATE_SQL_Grammar,update_query_2)
     # DELETE_SQL_EVALUATOR.get_result()
@@ -1131,9 +1254,6 @@ if __name__=='__main__':
     # update_query="UPDATE name_height SET name = 'suzy' WHERE column3 = 10;"
     # UPDATE_SQL_EVALUATOR=UPDATE_tree_Evaluator(UPDATE_SQL_Grammar,update_query)
     # print(UPDATE_SQL_EVALUATOR.get_result())
-
-
-
 
     insert_query="INSERT INTO name_age (name, age) VALUES ('Chelsea', 18);"
     INSERT_SQL_EVALUATOR=INSERT_tree_Evaluator(INSERT_SQL_Grammar,insert_query)
