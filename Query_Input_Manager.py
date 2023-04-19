@@ -1173,11 +1173,40 @@ if __name__=='__main__':
     print(mySystem.database_tables)
 
 
-    update_query="UPDATE name_age SET name = YUNI WHERE age = 13;"
+    update_query="UPDATE name_age SET name = 'YUNI' WHERE age = 13;"
     UPDATE_SQL_EVALUATOR=UPDATE_tree_Evaluator(UPDATE_SQL_Grammar,update_query)
     print(UPDATE_SQL_EVALUATOR.get_result())
     mySystem.update_data(UPDATE_SQL_EVALUATOR.table_name,UPDATE_SQL_EVALUATOR.update_clause,UPDATE_SQL_EVALUATOR.where_clause)
     print(mySystem.database_tables)
 
 
+
+    select_query = """
+    SELECT name_age.age,name_height.height 
+    FROM name_age 
+    INNER JOIN name_height 
+    ON name_age.name = name_height.name;
+    """
+    #select_query = "SELECT MAX(age) FROM name_age WHERE name = suzy AND age < 18;"
+    SELECT_SQL_EVALUATOR=new_SELECT_tree_Evaluator(SELECT_SQL_Grammar,select_query)
+    print(SELECT_SQL_EVALUATOR.get_result())
+    print("table_1",SELECT_SQL_EVALUATOR.from_clause[0])
+    print("projection_cols_1",[SELECT_SQL_EVALUATOR.selection_clause['cols'][0]])
+    print(mySystem.nested_loop_join(SELECT_SQL_EVALUATOR.from_clause[0],
+                              table_1_col=SELECT_SQL_EVALUATOR.option['theta_join_clause'][2],
+                            table_2 = SELECT_SQL_EVALUATOR.option['theta_join_clause'][0],
+                            table_2_col=SELECT_SQL_EVALUATOR.option['theta_join_clause'][5],
+                            projection_cols_1=[SELECT_SQL_EVALUATOR.selection_clause['cols'][0]],
+                            projection_cols_2=[SELECT_SQL_EVALUATOR.selection_clause['cols'][1]]
+                            ))
     
+    select_query = """
+    SELECT name,height
+    FROM name_height
+    ORDER BY height ASC;
+    """
+    #select_query = "SELECT MAX(age) FROM name_age WHERE name = suzy AND age < 18;"
+    SELECT_SQL_EVALUATOR_new=new_SELECT_tree_Evaluator(SELECT_SQL_Grammar,select_query)
+    print(SELECT_SQL_EVALUATOR_new.get_result())
+
+    print(mySystem.order_by(mySystem.database_tables[SELECT_SQL_EVALUATOR_new.from_clause[0]],order_cols=[SELECT_SQL_EVALUATOR_new.option['order_by_clause'][0]],sort=SELECT_SQL_EVALUATOR_new.option['order_by_clause'][1]))

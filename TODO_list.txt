@@ -9,9 +9,10 @@
 6. (✅) Link create, drop, delete sql to Data_Definition_Language system.
 7. (✅) Edit insert. 
 8. Decide when to write in disk, i.e., csv file.
-9. SELECT!!!
-10. (Is there any way to apply ">" "<" "=" directly into "if" condition??? ) (用不着了)
+9. (Is there any way to apply ">" "<" "=" directly into "if" condition??? ) (用不着了)
+10. SELECT!!!
 11. conjunctive and disjunctive 
-12. (✅ BUT USELESS) INDEX should have their name. 
+12. (✅) INDEX should have their name. 
 13. Join projection has grammar like select table1.column1,table2.column2 where ... 
+14. INDEX should be applied to every primary key (!!!) (等下马上去加上)
 -1. 活着

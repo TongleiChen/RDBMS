@@ -17,3 +17,9 @@ plan:
 3. (✅) update index value when delete data
 4. (✅) update index value when insert data
 5. (✅) drop index
+
+
+
+
+0418: for every single primary key, add index to it. 
+for multiple primary key, not add index to it. can check duplicates. 
