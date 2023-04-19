@@ -91,7 +91,7 @@ SELECT_SQL_Grammar = """
     COUNT: "COUNT"i
 
 
-    char_num: (NAME | NUMBER)*
+    char_num: (NAME | NUMBER)
 
     start: [select_statement end]
 
@@ -767,7 +767,6 @@ class new_SELECT_tree_Evaluator:
         elif tree.data=="column_table_commalist":
             self.from_clause.append(tree.children[0].children[0].children[0].value)
         elif tree.data=="options":
-            # print(len(tree.children))
             for child in tree.children:
                 self.eval_tree(child)
         elif tree.data=="where_clause":
@@ -805,17 +804,21 @@ class new_SELECT_tree_Evaluator:
                             temp.append(child.children[0].children[0].children[0].value)
                         elif len(child.children[0].children)==3:
                             temp.append(child.children[0].children[1].children[0].value)
-            self.option["where_clause"].append(temp)      
+            self.option["where_clause"].append(temp)     
+
         elif tree.data=="order_by_clause":
             self.eval_tree(tree.children[2]) # order_by_commalist
+
         elif tree.data=="order_by_commalist":
             # print(tree.children[1].children[0].value)
             self.option["order_by_clause"].append(tree.children[0].children[0].children[0].value)
             self.option["order_by_clause"].append(tree.children[1].children[0].value)
+
         elif tree.data=="groupby_clause":
             self.option["group_having_clause"].append(tree.children[0].children[0].children[0].value) # column_table
             if len(tree.children)>=2: # "GROUP BY" column_table having_clause 
                 self.eval_tree(tree.children[1])
+
         elif tree.data=="having_clause":
             for child in tree.children:
                 if child.data=="agg_func":
@@ -830,9 +833,8 @@ class new_SELECT_tree_Evaluator:
                             self.option["group_having_clause"].append(child.children[0].children[0].children[0].value)
                         elif len(child.children[0].children)==3:
                             self.option["group_having_clause"].append(child.children[0].children[1].children[0].value)
+                            
         elif tree.data=="theta_join_clause":
-            # INNER JOIN name_address 
-            # ON name_age.name = name_address.name 
             for child in tree.children:
                 if child.data=="column_table":
                     self.option["theta_join_clause"].append(child.children[0].children[0].value)
@@ -1042,8 +1044,41 @@ class CREATE_tree_Evaluator:
 
         else:
             raise ValueError(f"Invalid syntax query")
+
+def GET_EVALUATOR_from_Query(query):
+        EVALUATOR=None
+        query_list=query.split(" ")
+        option=query_list[0]
+        if option=="CREATE" or option=="DROP":
+            option+=query_list[1]
         
+        if option=="SELECT":
+            EVALUATOR=new_SELECT_tree_Evaluator(SELECT_SQL_Grammar,query)
+        elif option=="CREATETABLE":
+            EVALUATOR=CREATE_tree_Evaluator(CREATE_SQL_Grammar,query)
+        elif option=="DROPTABLE":
+            EVALUATOR=DROP_tree_Evaluator(DROP_SQL_Grammar,query)
+        elif option=="UPDATE":
+            EVALUATOR=UPDATE_tree_Evaluator(UPDATE_SQL_Grammar,query)
+        elif option=="INSERT":
+            EVALUATOR=INSERT_tree_Evaluator(INSERT_SQL_Grammar,query)
+        
+        return EVALUATOR
+
 if __name__=='__main__':
+    test_query="SELECT age FROM name_age INNER JOIN name_age ON name_age1.name=name_age2.name;"
+    #test_query="CREATE TABLE customers (id INT PRIMARY KEY,name VARCHAR(50) NOT NULL,age INT PRIMARY KEY,email VARCHAR(100) NOT NULL);"
+    #test_query="DROP TABLE customers;"
+    #test_query="UPDATE my_table SET column1 = 'suzy', column2 = 3 WHERE column3 >= 10;"
+    #test_query="INSERT INTO name_age (name, age) VALUES ('John', 30);"
+    #test_query="CREATE INDEX index_nameON table_name (column_name);"
+    #test_query="DROP INDEX index_name ON table_name;"
+    EVALUATOR=GET_EVALUATOR_from_Query(test_query)
+    print(EVALUATOR.get_result())
+
+
+
+
     # 1. select grammar
     # 0410 tested
     mySystem=System()
@@ -1059,6 +1094,7 @@ if __name__=='__main__':
     WHERE name='suzy' AND age BETWEEN 12 AND 30 
     ORDER BY age ASC;
     """
+    #select_query ="SELECT height FROM name_height ORDER BY height DESC;"
     #select_query = "SELECT MAX(age) FROM name_age WHERE name = suzy AND age < 18;"
     SELECT_SQL_EVALUATOR=new_SELECT_tree_Evaluator(SELECT_SQL_Grammar,select_query)
     print(SELECT_SQL_EVALUATOR.get_result())
@@ -1119,8 +1155,6 @@ if __name__=='__main__':
     mySystem.delete_data_dict(DELETE_SQL_EVALUATOR.table_name,DELETE_SQL_EVALUATOR.where_clause)
     print(mySystem.database_tables)
 
-
-
     # update_query_2 = "UPDATE name_height SET height = 160 WHERE name = 'suzy';"
     # UPDATE_SQL_EVALUATOR_2=UPDATE_tree_Evaluator(UPDATE_SQL_Grammar,update_query_2)
     # DELETE_SQL_EVALUATOR.get_result()
@@ -1130,9 +1164,6 @@ if __name__=='__main__':
     # update_query="UPDATE name_height SET name = 'suzy' WHERE column3 = 10;"
     # UPDATE_SQL_EVALUATOR=UPDATE_tree_Evaluator(UPDATE_SQL_Grammar,update_query)
     # print(UPDATE_SQL_EVALUATOR.get_result())
-
-
-
 
     insert_query="INSERT INTO name_age (name, age) VALUES ('Chelsea', 18);"
     INSERT_SQL_EVALUATOR=INSERT_tree_Evaluator(INSERT_SQL_Grammar,insert_query)
@@ -1149,3 +1180,4 @@ if __name__=='__main__':
     print(mySystem.database_tables)
 
 
+    
