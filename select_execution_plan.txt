@@ -2,5 +2,8 @@
 select 到底是个什么顺序我真的谢谢啊啊啊😨
 0417: 
 1. (NOT TESTED)JOIN: nested loop join, with column projection, without apply functions, i.e., SUM, MAX...
+我感觉join后面再加where的话, 因为join的output是一个新table, where的input就得是一个table, 那我除非把where分开写成两个函数, 不然没有join的table就永远用不到index了???
+也就是说select的order by group by where 谁在后面谁就用不到index了???
 2. GROUP BY: multiple key ???
 3. ORDER BY: multiple key ??? ===> one key is enough😇, dont know how to sort by multiple key
+4. WHERE: 

@@ -1043,6 +1043,7 @@ class CREATE_tree_Evaluator:
         else:
             raise ValueError(f"Invalid syntax query")
         
+
 if __name__=='__main__':
     # 1. select grammar
     # 0410 tested
@@ -1142,7 +1143,7 @@ if __name__=='__main__':
     print(mySystem.database_tables)
 
 
-    update_query="UPDATE name_age SET name = YUNI WHERE age = 13;"
+    update_query="UPDATE name_age SET name = 'YUNI' WHERE age = 13;"
     UPDATE_SQL_EVALUATOR=UPDATE_tree_Evaluator(UPDATE_SQL_Grammar,update_query)
     print(UPDATE_SQL_EVALUATOR.get_result())
     mySystem.update_data(UPDATE_SQL_EVALUATOR.table_name,UPDATE_SQL_EVALUATOR.update_clause,UPDATE_SQL_EVALUATOR.where_clause)

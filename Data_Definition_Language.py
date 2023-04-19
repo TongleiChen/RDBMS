@@ -593,7 +593,8 @@ class System:
         col_functions = selection_clause['agg_fun']
         # theta_join = option['theta_join_clause']
 
-    def nested_loop_join(self,table_1:str, table_1_col:str, operation, table_2:str, table_2_col:str,projection_cols_1:list,projection_cols_2:list):
+    def nested_loop_join(self,table_1:str, table_1_col:str, table_2:str, table_2_col:str,projection_cols_1:list,projection_cols_2:list):
+        # only support join grammar like "SELECT table_1.column, table_2.column from table_1 INNER JOIN table_2 ON table_1.column2 = table_2.column2"
         row_num_1 = self.get_row_num(table_1)
         row_num_2 = self.get_row_num(table_2)
         new_table = {}  # structure similar to self.database_tables[relation_name] {'column_1':[],'column_2':[]}
@@ -606,31 +607,10 @@ class System:
             value_1 = self.database_tables[table_1][table_1_col][r_1]
             for r_2 in range(row_num_2):
                 value_2 = self.database_tables[table_2][table_2_col][r_2]
-                if operation == ">":
-                    if value_1 > value_2:
-                        pass
-                    else:
-                        continue
-                elif operation == ">=":
-                    if value_1 >= value_2:
-                        pass
-                    else:
-                        continue
-                elif operation == "=":
-                    if value_1 == value_2:
-                        pass
-                    else:
-                        continue
-                elif operation == "<=":
-                    if value_1 <= value_2:
-                        pass
-                    else:
-                        continue
-                elif operation == "<":
-                    if value_1 < value_2:
-                        pass
-                    else:
-                        continue
+                if value_1 == value_2:
+                    pass
+                else:
+                    continue
                  # when come to this line, join two tables
                 for c_1 in projection_cols_1:
                     new_table[c_1].append(self.database_tables[table_1][r_1])
@@ -639,6 +619,7 @@ class System:
                 
         return new_table
     
+
 
     def order_by(self,table_data:dict,order_cols:list,sort:str):
         # there should be only one key in order_col right now
@@ -659,6 +640,244 @@ class System:
             for column in table_data.keys():
                 new_table[column].append(table_data[column][idx])
         return new_table
+
+    def select_where_from_output(self,data_table:dict,conditions:list):
+        # single table, condition at most 2.
+        selected_table = {}
+        selected_row_num = []
+        columns_list = list(data_table.keys())
+        row_num = len(data_table[columns_list[0]])
+        if len(conditions) == 1:
+            condition = conditions[0]
+            if len(condition) == 3: # ['name', '=', 'suzy']
+                col = condition[0]
+                op = condition[1]
+                val = condition[2]
+                for r in range(row_num):
+                    value_in_row = data_table[col][r]
+                    if op == ">":
+                        if value_in_row > val:
+                            pass
+                        else:
+                            continue
+                    elif op == ">=":
+                        if value_in_row >= val:
+                            pass
+                        else:
+                            continue
+                    elif op == "=":
+                        if value_in_row == val:
+                            pass
+                        else:
+                            continue
+                    elif op == "<=":
+                        if value_in_row <= val:
+                            pass
+                        else:
+                            continue
+                    elif op == "<":
+                        if value_in_row < val:
+                            pass
+                        else:
+                            continue
+                    # when come to this line: meet the requirement and select
+                    selected_row_num.append(r)
+            else: # ['age', 'BETWEEN', '12', 'AND', '30']
+                col = condition[0]
+                # the sql grammar said that former should be smaller than later
+                lower_bound = condition[2]
+                upper_bound = condition[4]
+                
+                for r in range(row_num):
+                    value_in_row = data_table[col][r]
+                    if (lower_bound <= value_in_row) and (value_in_row <= upper_bound):
+                        selected_row_num.append(r)
+                    else:
+                        continue
+
+            for selected_r in selected_row_num:
+                # no projection
+                columns_list = list(data_table.keys())
+                for column in columns_list:
+                    selected_table[column] = []
+                for column in columns_list:
+                    selected_table[column].append(data_table[selected_r])
+            return selected_table,selected_row_num
+        else: # len(conditions) == 3 # [['name', '=', 'suzy'],'AND',['age', 'BETWEEN', '12', 'AND', '30']]
+            condition_1 = conditions[0]
+            operation = condition[1]
+            condition_2 = conditions[2]
+
+            # TODO: optimization here!!!
+            # TODO: primary key with index
+            if operation == "AND":
+
+                data_table_output,_ = self.select_where_from_output(data_table,condition_1) # meet with condition1 and meet with condition2
+                data_table_output_2,_ = self.select_where_from_output(data_table_output,condition_2)
+                return data_table_output_2
+            else: # operation == "OR": condition_1 = True
+                 # IN condition_1 = False find condition_2 = True
+                 # 好像要加一个参数要不要输出data_table_output
+                 # 明天再确认一下 现在脑子不太清醒 又感觉好像不用
+                _,selected_row_list = self.select_where_from_output(data_table,condition_1)
+                columns_list_ = list(data_table.keys())
+                row_num_ = len(data_table[columns_list_[0]])
+                not_selected_list = [i for i in range(row_num_)] - selected_row_list
+                data_remain = {}
+                for column in columns_list:
+                    data_remain[column] = []
+                for r_not_s in not_selected_list:
+                    for column in columns_list:
+                        data_remain[column].append(data_table[column][r_not_s])
+                    
+                _,selected_row_list_2 = self.select_where_from_output(data_remain,condition_2)
+                selected_row_total = set(selected_row_list + selected_row_list_2)
+                for column in columns_list:
+                    selected_table[column] = []
+                for s_t in selected_row_total:
+                    for column in columns_list:
+                        selected_table[column].append(data_table[column][s_t])
+                return selected_table
+    
+
+
+                    
+
+
+
+
+
+            
+
+
+                
+
+    def select_where(self,relation_name:str,conditions:list):
+        # single table(no join), condition at most 2.
+        selected_table = {} # similar to self.database_tables[relation_name]
+        # [['name', '=', 'suzy'],'AND',['age', 'BETWEEN', '12', 'AND', '30']]
+        selected_row_num = []
+        # not using index
+        if len(conditions) == 1:
+            # one condition
+            
+            condition = conditions[0]
+            if len(condition) == 3: # ['name', '=', 'suzy']
+                col = condition[0]
+                op = condition[1]
+                val = condition[2]
+                row_num = self.get_row_num(relation_name)
+                for r in range(row_num):
+                    value_in_row = self.database_tables[relation_name][col][r]
+                    if op == ">":
+                        if value_in_row > val:
+                            pass
+                        else:
+                            continue
+                    elif op == ">=":
+                        if value_in_row >= val:
+                            pass
+                        else:
+                            continue
+                    elif op == "=":
+                        if value_in_row == val:
+                            pass
+                        else:
+                            continue
+                    elif op == "<=":
+                        if value_in_row <= val:
+                            pass
+                        else:
+                            continue
+                    elif op == "<":
+                        if value_in_row < val:
+                            pass
+                        else:
+                            continue
+                    # when come to this line: meet the requirement and select
+                    selected_row_num.append(r)
+            else: # ['age', 'BETWEEN', '12', 'AND', '30']
+                col = condition[0]
+                # the sql grammar said that former should be smaller than later
+                lower_bound = condition[2]
+                upper_bound = condition[4]
+                row_num = self.get_row_num(relation_name)
+                for r in range(row_num):
+                    value_in_row = self.database_tables[relation_name][col][r]
+                    if (lower_bound <= value_in_row) and (value_in_row <= upper_bound):
+                        selected_row_num.append(r)
+                    else:
+                        continue
+            for selected_r in selected_row_num:
+                # no projection
+                columns_list = self.get_column_list(relation_name)
+                for column in columns_list:
+                    selected_table[column] = []
+                for column in columns_list:
+                    selected_table[column].append(self.database_tables[relation_name][selected_r])
+            return selected_table
+
+        else: # two conditions 
+            condition_1 = conditions[0]
+            operation = condition[1]
+            condition_2 = conditions[2]
+
+            # TODO: optimization here!!!
+            # TODO: primary key with index
+            if operation == "AND":
+
+                data_table_output,_ = self.select_where(relation_name,condition_1) # meet with condition1 and meet with condition2
+                data_table_output_2,_ = self.select_where_from_output(data_table_output,condition_2)
+                return data_table_output_2
+            else: # operation == "OR": condition_1 = True
+                 # IN condition_1 = False find condition_2 = True
+                 # TODO: 
+                 # 好像要加一个参数要不要输出data_table_output
+                 # 明天再确认一下 现在脑子不太清醒 又感觉好像不用
+                _,selected_row_list = self.select_where(relation_name,condition_1)
+                columns_list = self.get_column_list(relation_name)
+                row_num_ = self.get_row_num(relation_name)
+                not_selected_list = [i for i in range(row_num_)] - selected_row_list
+                data_remain = {}
+                for column in columns_list:
+                    data_remain[column] = []
+                for r_not_s in not_selected_list:
+                    for column in columns_list:
+                        data_remain[column].append(self.database_tables[relation_name][column][r_not_s])
+                    
+                _,selected_row_list_2 = self.select_where_from_output(data_remain,condition_2)
+                selected_row_total = set(selected_row_list + selected_row_list_2)
+                for column in columns_list:
+                    selected_table[column] = []
+                for s_t in selected_row_total:
+                    for column in columns_list:
+                        selected_table[column].append(self.database_tables[relation_name][column][s_t])
+                return selected_table
+
+            
+
+
+            
+        # TODO: using index
+            
+
+    # 写得我好想死 
+    def projection(self,data_table:dict,cols:list):
+        # 不知道能不能用上反正先写再说
+        pro_data_table = {}
+        for col in cols:
+            pro_data_table[col] = data_table[col]
+        return pro_data_table
+            
+    def group_by(self,relation_name):
+        return
+    
+    # 真的不想写了我厌倦了呜呜呜呜呜呜呜呜呜呜呜呜呜呜呜
+
+
+
+
+
 
 
 
