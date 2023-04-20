@@ -770,7 +770,7 @@ class System:
 
     def select_where(self,relation_name:str,conditions:list):
         # YUNI 0419 TESTED
-        
+
         # single table(no join), condition at most 2.
         selected_table = {} # similar to self.database_tables[relation_name]
         # [['name', '=', 'suzy'],'AND',['age', 'BETWEEN', '12', 'AND', '30']]
@@ -897,7 +897,6 @@ class System:
         # TODO: using index
             
 
-    # 写得我好想死 
     def projection(self,data_table:dict,cols:list):
         # 不知道能不能用上反正先写再说
         # YUNI 0419 TESTED 
@@ -906,10 +905,167 @@ class System:
             pro_data_table[col] = data_table[col]
         return pro_data_table
             
-    def group_by(self,relation_name):
-        return
+    def group_by(self,data_table:dict,group_columns:list,having_condition:list,table_cols:list,agg_func:list):
+        # 改了十遍！！！！！！！我真的不想再改了！！！！！！
+        # 啊啊啊啊啊啊啊啊
+
+        # group by only one item
+        # having only one condition
+        
+        columns_list = list(data_table.keys())
+        row_num = len(data_table[columns_list[0]])
+        group_column = group_columns[0]
+        # having = having_condition[0]
+        group_value = set(data_table[group_column])
+        group_dict = {} # store all the value and the sub-table
+        empty_table = {}
+        for column in columns_list:
+            empty_table[column] = []
+        for value in group_value:
+            group_dict[value] = copy.deepcopy(empty_table)
+        for r in range(row_num):
+            current_value = data_table[group_column][r]
+            for column in columns_list:
+                group_dict[current_value][column].append(data_table[column][r])
+
+
+        # having conditions
+
+        if len(having_condition) != 0: # have having then do filter
+            # filtered_table = copy.deepcopy(empty_table)
+            # having condition can be 
+            # 1. about the group by value 
+            # OR 
+            # 2. about the aggregate column in select clause
+            if len(having_condition[0]) == 4:
+                aggregation = having_condition[0][0]
+                agg_col = having_condition[0][1]
+                op = having_condition[0][2]
+                # agg_col should be 
+                try:
+                    agg_val = int(having_condition[0][3])
+                except:
+                    agg_val = having_condition[0][3]
+                
+                if aggregation == "SUM":
+                    sub_value = sum(group_dict[val][agg_col])
+                elif aggregation == "MAX":
+                    sub_value = max(group_dict[val][agg_col])
+                elif aggregation == "MIN":
+                    sub_value = min(group_dict[val][agg_col])
+                elif aggregation == "AVG": 
+                    # why python dont have average function !!!
+                    sub_value = sum(group_dict[val][agg_col])/len(group_dict[val][agg_col])
+                elif aggregation == "COUNT":
+                    sub_value = len(group_dict[val][agg_col])
+                for val in group_value:
+                    
+                    if op == ">":
+                        if sub_value > agg_val:
+                            continue
+                        else:
+                            del group_dict[val]
+                    elif op == ">=":
+                        if sub_value >= agg_val:
+                            continue
+                        else:
+                            del group_dict[val]
+                    elif op == "=":
+                        if sub_value == agg_val:
+                            continue
+                        else:
+                            del group_dict[val]
+                    elif op == "<=":
+                        if sub_value <= agg_val:
+                            continue
+                        else:
+                            del group_dict[val]
+                    elif op == "<":
+                        if sub_value < agg_val:
+                            continue
+                        else:
+                            del group_dict[val]
+            else:
+                # about the group by value
+                group_by_col = having_condition[0][0]
+                op = having_condition[0][1]
+                try:
+                    group_by_val = int(having_condition[0][2])
+                except:
+                    group_by_val = having_condition[0][2]
+                if group_by_col != group_column:
+                    # TODO: raise error
+                    print("GROUP BY ERROR: Unknown column in having clause. ")
+                    return
+                for val in group_value:
+                    if op == ">":
+                        if val > group_by_val:
+                            continue
+                        else:
+                            del group_dict[val]
+                    elif op == ">=":
+                        if val >= group_by_val:
+                            continue
+                        else:
+                            del group_dict[val]
+                    elif op == "=":
+                        if val == group_by_val:
+                            continue
+                        else:
+                            del group_dict[val]
+                    elif op == "<=":
+                        if val <= group_by_val:
+                            continue
+                        else:
+                            del group_dict[val]
+                    elif op == "<":
+                        if val < group_by_val:
+                            continue
+                        else:
+                            del group_dict[val]
+
+                # meet the requirement
+                
+        # projections
+        # select clause(table_col here) should 
+        # 1. have aggregation
+        # OR 
+        # 2. is in group by list 
+        # SELECT list is not in GROUP BY clause and contains nonaggregated column 'disease_data.case_death.total_case' which is not functionally dependent on columns in GROUP BY clause; this is incompatible with sql_mode=only_full_group_by
+        proj_table = {}
+        for col_idx,proj_col in table_cols:
+            if (proj_col not in group_columns) and (agg_func[col_idx] == None):
+                # TODO: raise error
+                print("GROUP BY ERROR: SELECT list is not in GROUP BY clause and contains nonaggregated column.")
+                return
+            else:
+                proj_table[proj_col] = []
+        for val in group_value:
+
+            for col_idx,proj_col in table_cols:
+                current_agg = agg_func[col_idx]
+                if current_agg == None:
+                    sub_value == val
+                else:
+                    if current_agg == "SUM":
+                        sub_value = sum(group_dict[val][proj_col])
+                    elif current_agg == "MAX":
+                        sub_value = max(group_dict[val][proj_col])
+                    elif current_agg == "MIN":
+                        sub_value = min(group_dict[val][proj_col])
+                    elif current_agg == "AVG": 
+                        # why python dont have average function !!!
+                        sub_value = sum(group_dict[val][proj_col])/len(group_dict[val][proj_col])
+                    elif current_agg == "COUNT":
+                        sub_value = len(group_dict[val][proj_col])
+                proj_table[proj_col].append(sub_value)
+        
+
+
+
+        return proj_table
     
-    # 真的不想写了我厌倦了呜呜呜呜呜呜呜呜呜呜呜呜呜呜呜
+    
 
 
 

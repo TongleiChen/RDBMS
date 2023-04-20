@@ -1303,3 +1303,12 @@ if __name__=='__main__':
 
     # print(mySystem.projection(output,SELECT_SQL_EVALUATOR_new.selection_clause['cols']))
     print(mySystem.select_where(SELECT_SQL_EVALUATOR_new.from_clause[0],SELECT_SQL_EVALUATOR_new.option['where_clause']))
+
+    select_query = """
+    SELECT SUM(height),name
+    FROM name_height
+    GROUP BY height HAVING SUM(height) = 100;
+    """
+    #select_query = "SELECT MAX(age) FROM name_age WHERE name = suzy AND age < 18;"
+    SELECT_SQL_EVALUATOR_new=new_SELECT_tree_Evaluator(SELECT_SQL_Grammar,select_query)
+    print(SELECT_SQL_EVALUATOR_new.get_result())

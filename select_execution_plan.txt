@@ -7,3 +7,6 @@ select 到底是个什么顺序我真的谢谢啊啊啊😨
 2. GROUP BY: multiple key ???
 3. ORDER BY: multiple key ??? ===> one key is enough😇, dont know how to sort by multiple key
 4. WHERE: can only be numbers?
+
+
+0419: JOIN apply projection inside, GROUP BY apply projection inside
