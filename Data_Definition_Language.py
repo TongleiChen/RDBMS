@@ -360,7 +360,7 @@ class System:
             
             if match_flag == True:
                 delete_row_list.append(i)
-        print("###",delete_row_list)
+        # print("###",delete_row_list)
         
         delete_row_list_reverse = delete_row_list[::-1]
         for delete_idx in delete_row_list_reverse:
@@ -627,6 +627,7 @@ class System:
     def order_by(self,table_data:dict,order_cols:list,sort:str):
         
         # there should be only one key in order_col right now
+        # YUNI 0419 Tested
         new_table = {}
         for column in table_data.keys():
             new_table[column] = []
@@ -646,6 +647,7 @@ class System:
         return new_table
 
     def select_where_from_output(self,data_table:dict,conditions:list):
+        # YUNI 0419 TESTED
         # single table, condition at most 2.
         selected_table = {}
         selected_row_num = []
@@ -656,9 +658,13 @@ class System:
             if len(condition) == 3: # ['name', '=', 'suzy']
                 col = condition[0]
                 op = condition[1]
-                val = condition[2]
+                try:
+                    val = int(condition[2])
+                except:
+                    val = condition[2]
                 for r in range(row_num):
                     value_in_row = data_table[col][r]
+                    print(value_in_row)
                     if op == ">":
                         if value_in_row > val:
                             pass
@@ -689,8 +695,14 @@ class System:
             else: # ['age', 'BETWEEN', '12', 'AND', '30']
                 col = condition[0]
                 # the sql grammar said that former should be smaller than later
-                lower_bound = condition[2]
-                upper_bound = condition[4]
+                try:
+                    lower_bound = int(condition[2])
+                except:
+                    lower_bound = condition[2]
+                try:
+                    upper_bound = int(condition[4])
+                except:
+                    upper_bound = condition[4]
                 
                 for r in range(row_num):
                     value_in_row = data_table[col][r]
@@ -698,32 +710,32 @@ class System:
                         selected_row_num.append(r)
                     else:
                         continue
-
+            for column in columns_list:
+                selected_table[column] = []
             for selected_r in selected_row_num:
                 # no projection
                 columns_list = list(data_table.keys())
+                
                 for column in columns_list:
-                    selected_table[column] = []
-                for column in columns_list:
-                    selected_table[column].append(data_table[selected_r])
+                    selected_table[column].append(data_table[column][selected_r])
             return selected_table,selected_row_num
         else: # len(conditions) == 3 # [['name', '=', 'suzy'],'AND',['age', 'BETWEEN', '12', 'AND', '30']]
             condition_1 = conditions[0]
-            operation = condition[1]
+            operation = conditions[1]
             condition_2 = conditions[2]
 
             # TODO: optimization here!!!
             # TODO: primary key with index
             if operation == "AND":
 
-                data_table_output,_ = self.select_where_from_output(data_table,condition_1) # meet with condition1 and meet with condition2
-                data_table_output_2,_ = self.select_where_from_output(data_table_output,condition_2)
+                data_table_output,_ = self.select_where_from_output(data_table,[condition_1]) # meet with condition1 and meet with condition2
+                data_table_output_2,_ = self.select_where_from_output(data_table_output,[condition_2])
                 return data_table_output_2
             else: # operation == "OR": condition_1 = True
                  # IN condition_1 = False find condition_2 = True
                  # 好像要加一个参数要不要输出data_table_output
                  # 明天再确认一下 现在脑子不太清醒 又感觉好像不用
-                _,selected_row_list = self.select_where_from_output(data_table,condition_1)
+                _,selected_row_list = self.select_where_from_output(data_table,[condition_1])
                 columns_list_ = list(data_table.keys())
                 row_num_ = len(data_table[columns_list_[0]])
                 not_selected_list = [i for i in range(row_num_)] - selected_row_list
@@ -734,7 +746,7 @@ class System:
                     for column in columns_list:
                         data_remain[column].append(data_table[column][r_not_s])
                     
-                _,selected_row_list_2 = self.select_where_from_output(data_remain,condition_2)
+                _,selected_row_list_2 = self.select_where_from_output(data_remain,[condition_2])
                 selected_row_total = set(selected_row_list + selected_row_list_2)
                 for column in columns_list:
                     selected_table[column] = []
@@ -757,6 +769,8 @@ class System:
                 
 
     def select_where(self,relation_name:str,conditions:list):
+        # YUNI 0419 TESTED
+
         # single table(no join), condition at most 2.
         selected_table = {} # similar to self.database_tables[relation_name]
         # [['name', '=', 'suzy'],'AND',['age', 'BETWEEN', '12', 'AND', '30']]
@@ -766,15 +780,24 @@ class System:
             # one condition
             
             condition = conditions[0]
+            # print(relation_name)
             if len(condition) == 3: # ['name', '=', 'suzy']
+                
                 col = condition[0]
                 op = condition[1]
-                val = condition[2]
+                # TODO: need to think twice
+                try:
+                    val = int(condition[2])
+                except:
+                    val = condition[2]
                 row_num = self.get_row_num(relation_name)
                 for r in range(row_num):
                     value_in_row = self.database_tables[relation_name][col][r]
                     if op == ">":
+                        # print("here")
+                        # print(value_in_row)
                         if value_in_row > val:
+                            
                             pass
                         else:
                             continue
@@ -803,8 +826,15 @@ class System:
             else: # ['age', 'BETWEEN', '12', 'AND', '30']
                 col = condition[0]
                 # the sql grammar said that former should be smaller than later
-                lower_bound = condition[2]
-                upper_bound = condition[4]
+                try:
+                    lower_bound = int(condition[2])
+                except:
+                    lower_bound = condition[2]
+                try:
+                    upper_bound = int(condition[4])
+                except:
+                    upper_bound = condition[4]
+                
                 row_num = self.get_row_num(relation_name)
                 for r in range(row_num):
                     value_in_row = self.database_tables[relation_name][col][r]
@@ -812,36 +842,38 @@ class System:
                         selected_row_num.append(r)
                     else:
                         continue
+            columns_list = self.get_column_list(relation_name)
+            for column in columns_list:
+                selected_table[column] = []
             for selected_r in selected_row_num:
                 # no projection
-                columns_list = self.get_column_list(relation_name)
+                
+                
                 for column in columns_list:
-                    selected_table[column] = []
-                for column in columns_list:
-                    selected_table[column].append(self.database_tables[relation_name][selected_r])
-            return selected_table
+                    selected_table[column].append(self.database_tables[relation_name][column][selected_r])
+            return selected_table,selected_row_num
 
         else: # two conditions 
             condition_1 = conditions[0]
-            operation = condition[1]
+            operation = conditions[1]
             condition_2 = conditions[2]
 
             # TODO: optimization here!!!
             # TODO: primary key with index
             if operation == "AND":
 
-                data_table_output,_ = self.select_where(relation_name,condition_1) # meet with condition1 and meet with condition2
-                data_table_output_2,_ = self.select_where_from_output(data_table_output,condition_2)
+                data_table_output,_ = self.select_where(relation_name,[condition_1]) # meet with condition1 and meet with condition2
+                data_table_output_2,_ = self.select_where_from_output(data_table_output,[condition_2])
                 return data_table_output_2
             else: # operation == "OR": condition_1 = True
                  # IN condition_1 = False find condition_2 = True
                  # TODO: 
                  # 好像要加一个参数要不要输出data_table_output
                  # 明天再确认一下 现在脑子不太清醒 又感觉好像不用
-                _,selected_row_list = self.select_where(relation_name,condition_1)
+                _,selected_row_list = self.select_where(relation_name,[condition_1])
                 columns_list = self.get_column_list(relation_name)
                 row_num_ = self.get_row_num(relation_name)
-                not_selected_list = [i for i in range(row_num_)] - selected_row_list
+                not_selected_list = [x for x in range(row_num_) if x not in selected_row_list]
                 data_remain = {}
                 for column in columns_list:
                     data_remain[column] = []
@@ -849,7 +881,7 @@ class System:
                     for column in columns_list:
                         data_remain[column].append(self.database_tables[relation_name][column][r_not_s])
                     
-                _,selected_row_list_2 = self.select_where_from_output(data_remain,condition_2)
+                _,selected_row_list_2 = self.select_where_from_output(data_remain,[condition_2])
                 selected_row_total = set(selected_row_list + selected_row_list_2)
                 for column in columns_list:
                     selected_table[column] = []
@@ -865,18 +897,176 @@ class System:
         # TODO: using index
             
 
-    # 写得我好想死 
     def projection(self,data_table:dict,cols:list):
         # 不知道能不能用上反正先写再说
+        # YUNI 0419 TESTED 
         pro_data_table = {}
         for col in cols:
             pro_data_table[col] = data_table[col]
         return pro_data_table
             
-    def group_by(self,relation_name):
-        return
+    def group_by(self,data_table:dict,group_columns:list,having_condition:list,table_cols:list,agg_func:list):
+        # 改了十遍！！！！！！！我真的不想再改了！！！！！！
+        # 啊啊啊啊啊啊啊啊
+
+        # group by only one item
+        # having only one condition
+        
+        columns_list = list(data_table.keys())
+        row_num = len(data_table[columns_list[0]])
+        group_column = group_columns[0]
+        # having = having_condition[0]
+        group_value = set(data_table[group_column])
+        group_dict = {} # store all the value and the sub-table
+        empty_table = {}
+        for column in columns_list:
+            empty_table[column] = []
+        for value in group_value:
+            group_dict[value] = copy.deepcopy(empty_table)
+        for r in range(row_num):
+            current_value = data_table[group_column][r]
+            for column in columns_list:
+                group_dict[current_value][column].append(data_table[column][r])
+
+
+        # having conditions
+
+        if len(having_condition) != 0: # have having then do filter
+            # filtered_table = copy.deepcopy(empty_table)
+            # having condition can be 
+            # 1. about the group by value 
+            # OR 
+            # 2. about the aggregate column in select clause
+            if len(having_condition[0]) == 4:
+                aggregation = having_condition[0][0]
+                agg_col = having_condition[0][1]
+                op = having_condition[0][2]
+                # agg_col should be 
+                try:
+                    agg_val = int(having_condition[0][3])
+                except:
+                    agg_val = having_condition[0][3]
+                
+                
+                for val in group_value:
+                    if aggregation == "SUM":
+                        sub_value = sum(group_dict[val][agg_col])
+                    elif aggregation == "MAX":
+                        sub_value = max(group_dict[val][agg_col])
+                    elif aggregation == "MIN":
+                        sub_value = min(group_dict[val][agg_col])
+                    elif aggregation == "AVG": 
+                        # why python dont have average function !!!
+                        sub_value = sum(group_dict[val][agg_col])/len(group_dict[val][agg_col])
+                    elif aggregation == "COUNT":
+                        sub_value = len(group_dict[val][agg_col])
+                    if op == ">":
+                        if sub_value > agg_val:
+                            continue
+                        else:
+                            del group_dict[val]
+                    elif op == ">=":
+                        if sub_value >= agg_val:
+                            continue
+                        else:
+                            del group_dict[val]
+                    elif op == "=":
+                        if sub_value == agg_val:
+                            continue
+                        else:
+                            del group_dict[val]
+                    elif op == "<=":
+                        if sub_value <= agg_val:
+                            continue
+                        else:
+                            del group_dict[val]
+                    elif op == "<":
+                        if sub_value < agg_val:
+                            continue
+                        else:
+                            del group_dict[val]
+            else:
+                # about the group by value
+                group_by_col = having_condition[0][0]
+                op = having_condition[0][1]
+                try:
+                    group_by_val = int(having_condition[0][2])
+                except:
+                    group_by_val = having_condition[0][2]
+                if group_by_col != group_column:
+                    # TODO: raise error
+                    print(group_by_col,group_column)
+                    print("GROUP BY ERROR: Unknown column in having clause. ")
+                    return
+                for val in group_value:
+                    if op == ">":
+                        if val > group_by_val:
+                            continue
+                        else:
+                            del group_dict[val]
+                    elif op == ">=":
+                        if val >= group_by_val:
+                            continue
+                        else:
+                            del group_dict[val]
+                    elif op == "=":
+                        if val == group_by_val:
+                            continue
+                        else:
+                            del group_dict[val]
+                    elif op == "<=":
+                        if val <= group_by_val:
+                            continue
+                        else:
+                            del group_dict[val]
+                    elif op == "<":
+                        if val < group_by_val:
+                            continue
+                        else:
+                            del group_dict[val]
+
+                # meet the requirement
+                
+        # projections
+        # select clause(table_col here) should 
+        # 1. have aggregation
+        # OR 
+        # 2. is in group by list 
+        # SELECT list is not in GROUP BY clause and contains nonaggregated column 'disease_data.case_death.total_case' which is not functionally dependent on columns in GROUP BY clause; this is incompatible with sql_mode=only_full_group_by
+        proj_table = {}
+        for col_idx,proj_col in enumerate(table_cols):
+            if (proj_col not in group_columns) and (agg_func[col_idx] == None):
+                # TODO: raise error
+                print("GROUP BY ERROR: SELECT list is not in GROUP BY clause and contains nonaggregated column.")
+                return
+            else:
+                proj_table[proj_col] = []
+        for val in group_dict.keys():
+
+            for col_idx,proj_col in enumerate(table_cols):
+                current_agg = agg_func[col_idx]
+                if current_agg == None:
+                    sub_value = val
+                else:
+                    if current_agg == "SUM":
+                        sub_value = sum(group_dict[val][proj_col])
+                    elif current_agg == "MAX":
+                        sub_value = max(group_dict[val][proj_col])
+                    elif current_agg == "MIN":
+                        sub_value = min(group_dict[val][proj_col])
+                    elif current_agg == "AVG": 
+                        # why python dont have average function !!!
+                        sub_value = sum(group_dict[val][proj_col])/len(group_dict[val][proj_col])
+                    elif current_agg == "COUNT":
+                        sub_value = len(group_dict[val][proj_col])
+                proj_table[proj_col].append(sub_value)
+        
+
+
+
+        return proj_table
     
-    # 真的不想写了我厌倦了呜呜呜呜呜呜呜呜呜呜呜呜呜呜呜
+    
 
 
 
