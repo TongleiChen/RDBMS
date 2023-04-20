@@ -1302,7 +1302,7 @@ if __name__=='__main__':
     # output = mySystem.order_by(mySystem.database_tables[SELECT_SQL_EVALUATOR_new.from_clause[0]],order_cols=[SELECT_SQL_EVALUATOR_new.option['order_by_clause'][0]],sort=SELECT_SQL_EVALUATOR_new.option['order_by_clause'][1])
 
     # print(mySystem.projection(output,SELECT_SQL_EVALUATOR_new.selection_clause['cols']))
-    print(mySystem.select_where(SELECT_SQL_EVALUATOR_new.from_clause[0],SELECT_SQL_EVALUATOR_new.option['where_clause']))
+    # print(mySystem.select_where(SELECT_SQL_EVALUATOR_new.from_clause[0],SELECT_SQL_EVALUATOR_new.option['where_clause']))
 
     select_query = """
     SELECT MIN(height),age
@@ -1328,3 +1328,19 @@ if __name__=='__main__':
                             having_condition=[SELECT_SQL_EVALUATOR_new.option['group_having_clause'][1:]],
                             table_cols=SELECT_SQL_EVALUATOR_new.selection_clause['cols'],
                             agg_func=SELECT_SQL_EVALUATOR_new.selection_clause['agg_fun']))
+    
+
+
+
+    select_query = """
+    SELECT SUM(height)
+    FROM name_height;
+    """
+    #select_query = "SELECT MAX(age) FROM name_age WHERE name = suzy AND age < 18;"
+    SELECT_SQL_EVALUATOR_new=new_SELECT_tree_Evaluator(SELECT_SQL_Grammar,select_query)
+    print(SELECT_SQL_EVALUATOR_new.get_result())
+    print(mySystem.projection(# mySystem.database_tables[SELECT_SQL_EVALUATOR_new.from_clause[0]],
+                              simple_data,
+                              SELECT_SQL_EVALUATOR_new.selection_clause['cols'],
+                              SELECT_SQL_EVALUATOR_new.selection_clause['agg_fun']
+                              ))

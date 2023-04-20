@@ -897,12 +897,46 @@ class System:
         # TODO: using index
             
 
-    def projection(self,data_table:dict,cols:list):
-        # 不知道能不能用上反正先写再说
-        # YUNI 0419 TESTED 
+    def projection(self,data_table:dict,cols:list,agg_fun:list):
+        # YUNI 0419 TESTED
+        # YUNI 0420 EDITED
+        #  
         pro_data_table = {}
-        for col in cols:
-            pro_data_table[col] = data_table[col]
+        agg_flag = None
+        # 1. agg_fun all has value
+        # OR
+        # 2. agg_fun all not have value
+        for c_agg in agg_fun:
+            if c_agg != None: # have agg_fun
+                if agg_flag == False:
+                    # TODO: raise error
+                    print("PROJECTION ERROR: In aggregated query without GROUP BY, SELECT list contains nonaggregated column. ")
+                    return
+                agg_flag = True
+            else: # dont have agg_fun (if c_agg == None)
+                if agg_flag == True:
+                    # TODO: raise error
+                    print("PROJECTION ERROR: In aggregated query without GROUP BY, SELECT list contains nonaggregated column. ")
+                    return
+                agg_flag = False
+        if agg_flag == False:
+            for col in cols:
+                pro_data_table[col] = data_table[col]
+        else: #agg_flag == True:
+            for col_idx,col in enumerate(cols):
+                current_agg = agg_fun[col_idx]
+                col_name = "{}({})".format(current_agg,col)
+                if current_agg == "SUM":
+                    pro_data_table[col_name] = [sum(data_table[col])]
+                elif current_agg == "MAX":
+                    pro_data_table[col_name] = [max(data_table[col])]
+                elif current_agg == "MIN":
+                    pro_data_table[col_name] = [min(data_table[col])]
+                elif current_agg == "COUNT":
+                    pro_data_table[col_name] = [len(data_table[col])]
+                elif current_agg == "AVG":
+                    pro_data_table[col_name] = [sum(data_table[col])/len(data_table[col])]
+        
         return pro_data_table
             
     def group_by(self,data_table:dict,group_columns:list,having_condition:list,table_cols:list,agg_func:list):
@@ -1047,6 +1081,7 @@ class System:
                 current_agg = agg_func[col_idx]
                 if current_agg == None:
                     sub_value = val
+                    
                 else:
                     if current_agg == "SUM":
                         sub_value = sum(group_dict[val][proj_col])
@@ -1060,6 +1095,15 @@ class System:
                     elif current_agg == "COUNT":
                         sub_value = len(group_dict[val][proj_col])
                 proj_table[proj_col].append(sub_value)
+        # change column name
+        for col_idx,proj_col in enumerate(table_cols):
+            current_agg = agg_func[col_idx]
+            if current_agg != None:
+                col_name = "{}({})".format(current_agg,proj_col)
+                proj_table[col_name] = proj_table.pop(proj_col)
+            
+                
+        
         
 
 
