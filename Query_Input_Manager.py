@@ -105,6 +105,11 @@ SELECT_SQL_Grammar = """
     num_word_commalist: [max_min] num_word
         | num_word_commalist COMMA [max_min] num_word
         | [sum] num_word
+        | num_word_commalist COMMA [sum] num_word
+        | [avg] num_word
+        | num_word_commalist COMMA [avg] num_word
+        | [count] num_word
+        | num_word_commalist COMMA [count] num_word
         
 
     num_word: column_table
@@ -156,6 +161,10 @@ SELECT_SQL_Grammar = """
     max_min: MAX | MIN 
     
     sum: SUM
+
+    avg: AVG
+
+    count: COUNT
 """
 # CREATE GRAMMAR
 CREATE_TABLE_SQL_Grammar = """
@@ -810,7 +819,7 @@ class new_SELECT_tree_Evaluator:
                         pass
                     elif tree.children[i]==None:
                         self.selection_clause["agg_fun"].append(None)
-                    elif tree.children[i].data=="max_min" or tree.children[i].data=="sum":
+                    elif tree.children[i].data=="max_min" or tree.children[i].data=="sum" or tree.children[i].data=="avg" or tree.children[i].data=="count" :
                         self.selection_clause["agg_fun"].append(tree.children[i].children[0].value)
                     elif tree.children[i].data=="num_word":
                         if len(tree.children[i].children)==1:
@@ -830,7 +839,7 @@ class new_SELECT_tree_Evaluator:
                         pass
                     elif tree.children[i]==None:
                         self.selection_clause["agg_fun"].append(None)
-                    elif tree.children[i].data=="max_min" or tree.children[i].data=="sum":
+                    elif tree.children[i].data=="max_min" or tree.children[i].data=="sum" or tree.children[i].data=="avg" or tree.children[i].data=="count":
                         self.selection_clause["agg_fun"].append(tree.children[i].children[0].value)
                     elif tree.children[i].data=="num_word":
                         if len(tree.children[i].children)==1: # column_table
@@ -1166,17 +1175,15 @@ if __name__=='__main__':
     EVALUATOR=GET_EVALUATOR_from_Query(test_query)
     print(EVALUATOR.get_result())
 
-
-
-
     # 1. select grammar
     # 0410 tested
     mySystem=System()
     mySystem.open_database('CLASS')
     #select_query = "SELECT age FROM name_age INNER JOIN name_age ON name_age1.name=name_age2.name;"
     #select_query = "SELECT age,MAX(name),name FROM name_age WHERE name='suzy' AND age BETWEEN 12 AND 30;" #where的顺序只能跟列表的顺序一致：
-    #select_query = "SELECT age,name FROM name_age WHERE name='suzy' AND age BETWEEN 12 AND 30 GROUP BY name HAVING SUM(age)>100 ORDER BY age ASC ;"
-    select_query = """
+    select_query = "SELECT name,MAX(name) FROM name_age WHERE name='suzy' AND age BETWEEN 12 AND 30;"
+    """
+    select_query = 
     SELECT name_age.age,name_address.address 
     FROM name_age 
     INNER JOIN name_address 
@@ -1188,6 +1195,7 @@ if __name__=='__main__':
     #select_query = "SELECT MAX(age) FROM name_age WHERE name = suzy AND age < 18;"
     SELECT_SQL_EVALUATOR=new_SELECT_tree_Evaluator(SELECT_SQL_Grammar,select_query)
     print(SELECT_SQL_EVALUATOR.get_result())
+
 
     
     # 2. create grammar
