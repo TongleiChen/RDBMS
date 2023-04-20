@@ -1305,10 +1305,26 @@ if __name__=='__main__':
     print(mySystem.select_where(SELECT_SQL_EVALUATOR_new.from_clause[0],SELECT_SQL_EVALUATOR_new.option['where_clause']))
 
     select_query = """
-    SELECT SUM(height),name
+    SELECT MIN(height),age
     FROM name_height
-    GROUP BY height HAVING SUM(height) = 100;
+    GROUP BY age HAVING MAX(height) >= 190;
     """
     #select_query = "SELECT MAX(age) FROM name_age WHERE name = suzy AND age < 18;"
     SELECT_SQL_EVALUATOR_new=new_SELECT_tree_Evaluator(SELECT_SQL_Grammar,select_query)
     print(SELECT_SQL_EVALUATOR_new.get_result())
+    simple_data = {
+        'name' : ['suzy','yuni','john','chelsea','selina','ella'],
+        'age': [20,20,20,10,14,23],
+        'height': [120,140,150,150,180,190]
+    }
+    # result = 410,150,180,190
+    #          20 ,10, 14, 23
+    print(SELECT_SQL_EVALUATOR_new.option['group_having_clause'][0])
+    print(SELECT_SQL_EVALUATOR_new.option['group_having_clause'][1:])
+    print(SELECT_SQL_EVALUATOR_new.selection_clause['cols'])
+    print(SELECT_SQL_EVALUATOR_new.selection_clause['agg_fun'])
+    print(mySystem.group_by(simple_data,
+                            group_columns=[SELECT_SQL_EVALUATOR_new.option['group_having_clause'][0]],
+                            having_condition=[SELECT_SQL_EVALUATOR_new.option['group_having_clause'][1:]],
+                            table_cols=SELECT_SQL_EVALUATOR_new.selection_clause['cols'],
+                            agg_func=SELECT_SQL_EVALUATOR_new.selection_clause['agg_fun']))

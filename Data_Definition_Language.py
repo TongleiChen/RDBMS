@@ -947,19 +947,19 @@ class System:
                 except:
                     agg_val = having_condition[0][3]
                 
-                if aggregation == "SUM":
-                    sub_value = sum(group_dict[val][agg_col])
-                elif aggregation == "MAX":
-                    sub_value = max(group_dict[val][agg_col])
-                elif aggregation == "MIN":
-                    sub_value = min(group_dict[val][agg_col])
-                elif aggregation == "AVG": 
-                    # why python dont have average function !!!
-                    sub_value = sum(group_dict[val][agg_col])/len(group_dict[val][agg_col])
-                elif aggregation == "COUNT":
-                    sub_value = len(group_dict[val][agg_col])
+                
                 for val in group_value:
-                    
+                    if aggregation == "SUM":
+                        sub_value = sum(group_dict[val][agg_col])
+                    elif aggregation == "MAX":
+                        sub_value = max(group_dict[val][agg_col])
+                    elif aggregation == "MIN":
+                        sub_value = min(group_dict[val][agg_col])
+                    elif aggregation == "AVG": 
+                        # why python dont have average function !!!
+                        sub_value = sum(group_dict[val][agg_col])/len(group_dict[val][agg_col])
+                    elif aggregation == "COUNT":
+                        sub_value = len(group_dict[val][agg_col])
                     if op == ">":
                         if sub_value > agg_val:
                             continue
@@ -995,6 +995,7 @@ class System:
                     group_by_val = having_condition[0][2]
                 if group_by_col != group_column:
                     # TODO: raise error
+                    print(group_by_col,group_column)
                     print("GROUP BY ERROR: Unknown column in having clause. ")
                     return
                 for val in group_value:
@@ -1033,19 +1034,19 @@ class System:
         # 2. is in group by list 
         # SELECT list is not in GROUP BY clause and contains nonaggregated column 'disease_data.case_death.total_case' which is not functionally dependent on columns in GROUP BY clause; this is incompatible with sql_mode=only_full_group_by
         proj_table = {}
-        for col_idx,proj_col in table_cols:
+        for col_idx,proj_col in enumerate(table_cols):
             if (proj_col not in group_columns) and (agg_func[col_idx] == None):
                 # TODO: raise error
                 print("GROUP BY ERROR: SELECT list is not in GROUP BY clause and contains nonaggregated column.")
                 return
             else:
                 proj_table[proj_col] = []
-        for val in group_value:
+        for val in group_dict.keys():
 
-            for col_idx,proj_col in table_cols:
+            for col_idx,proj_col in enumerate(table_cols):
                 current_agg = agg_func[col_idx]
                 if current_agg == None:
-                    sub_value == val
+                    sub_value = val
                 else:
                     if current_agg == "SUM":
                         sub_value = sum(group_dict[val][proj_col])

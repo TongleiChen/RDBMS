@@ -15,4 +15,9 @@
 12. (✅) INDEX should have their name. 
 13. Join projection has grammar like select table1.column1,table2.column2 where ... 
 14. INDEX should be applied to every primary key (!!!) (等下马上去加上)
+15. group by not completely tested!!! 
+    (1) HAVING 后面是group by column的
+    (2) AVG, COUNT
+    (3) aggregation 不是放 select clause 的第一个
+    (4) 暂时想不到
 -1. 活着
