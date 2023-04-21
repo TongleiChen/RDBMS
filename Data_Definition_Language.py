@@ -31,7 +31,6 @@ class System:
         # table_1:{"table_0":[table_0_name],"col_0":[col_name_0],"col_1":[col_name_1]}
 
 
-    
     def Create_Database(self,database_name):
         # YUNI: 0408 Tested
         self.database_name = database_name
@@ -170,7 +169,7 @@ class System:
         return
     
     
-    def create_table_dict(self,relation_name:str,attribute:dict,references:str,reference_col:str):
+    def create_table_dict(self,relation_name:str,attribute:dict):
 
         # YUNI: 0415 TESTED
         if relation_name in self.table_path:
@@ -181,6 +180,7 @@ class System:
         col_names = attribute['names']
         col_data_type = attribute['data_type']
         col_constraints = attribute['constraints']
+        foreign_key_col = attribute['foreign_keys_for_table']
         # add to path
         self.table_path[relation_name] = current_table_path
 
@@ -197,35 +197,39 @@ class System:
                 self.table_attributes[relation_name][col_name_i].append("True")
             else:
                 self.table_attributes[relation_name][col_name_i].append("False")
-            if col_constraints[col_idx] == 'FOREIGN KEY':
-                # TODO: check references
-                # 0 --> 1
-                # relation_name -> references
-                # add to relation_0
+        if len(foreign_key_col) != 0:
+            # TODO: check references
+            # 0 --> 1
+            # relation_name -> references
+            # add to relation_0
+            for i in range(len(foreign_key_col)):
+                references = foreign_key_col[i][1]
+                col_0_name = foreign_key_col[i][0]
+                reference_col = foreign_key_col[i][2]
                 col_1_name = self.find_primary_key(references)[0]
                 if col_1_name != reference_col:
                     # TODO: raise error
                     print("FOREIGN KEY ERROR: Reference column is not a primary key. ")
                 if relation_name not in self.foreign_key['foreign_key_0']:
                     self.foreign_key['foreign_key_0'][relation_name] = {"table_1":[references],
-                                                     "col_0":[col_name_i],
-                                                     "col_1":[col_1_name]
-                                                     }
+                                                        "col_0":[col_0_name],
+                                                        "col_1":[col_1_name]
+                                                        }
                 
 
                     # add to relation_1
                     self.foreign_key['foreign_key_1'][references] = {"table_0":[relation_name],
-                                                        "col_0":[col_name_i],
+                                                        "col_0":[col_0_name],
                                                         "col_1":[col_1_name]
                                                         }
                 else:
                     self.foreign_key['foreign_key_0'][relation_name]['table_1'].append(references)
-                    self.foreign_key['foreign_key_0'][relation_name]['col_0'].append(col_name_i)
+                    self.foreign_key['foreign_key_0'][relation_name]['col_0'].append(col_0_name)
                     self.foreign_key['foreign_key_0'][relation_name]['col_1'].append(col_1_name)
 
                     self.foreign_key['foreign_key_1'][references]["table_0"].append(relation_name)
-                    self.foreign_key['foreign_key_1'][references]["col_0"].append(relation_name)
-                    self.foreign_key['foreign_key_1'][references]["col_1"].append(relation_name)
+                    self.foreign_key['foreign_key_1'][references]["col_0"].append(col_0_name)
+                    self.foreign_key['foreign_key_1'][references]["col_1"].append(col_1_name)
 
 
 
@@ -805,11 +809,12 @@ class System:
     ############    虔诚地给select开辟一块地    ############
     #####################################################
 
-    def select_data(self,selection_clause,from_clause,option):
-        
-        select_columns = selection_clause['cols']
-        col_functions = selection_clause['agg_fun']
-        # theta_join = option['theta_join_clause']
+
+
+            
+            
+
+
 
 
     def nested_loop_join(self,table_1:str, table_1_col:str, 
@@ -822,13 +827,18 @@ class System:
 
 
         # YUNI 0419 TESTED!
+        # print(table_1,table_1_col,table_2,table_2_col,projection_cols_1,projection_cols_2)
         row_num_1 = self.get_row_num(table_1)
         row_num_2 = self.get_row_num(table_2)
         new_table = {}  # structure similar to self.database_tables[relation_name] {'column_1':[],'column_2':[]}
         for c_1 in projection_cols_1:
-            new_table[c_1] = []
+            c_1_name = "{}.{}".format(table_1,c_1)
+
+            new_table[c_1_name] = []
         for c_2 in projection_cols_2:
-            new_table[c_2] = []
+            c_2_name = "{}.{}".format(table_2,c_2)
+
+            new_table[c_2_name] = []
         
         for r_1 in range(row_num_1):
             value_1 = self.database_tables[table_1][table_1_col][r_1]
@@ -840,10 +850,12 @@ class System:
                     continue
                  # when come to this line, join two tables
                 for c_1 in projection_cols_1:
-                    new_table[c_1].append(self.database_tables[table_1][c_1][r_1])
+                    c_1_name = "{}.{}".format(table_1,c_1)
+                    new_table[c_1_name].append(self.database_tables[table_1][c_1][r_1])
                 for c_2 in projection_cols_2:
-                    new_table[c_2].append(self.database_tables[table_2][c_2][r_2])
-                
+                    c_2_name = "{}.{}".format(table_2,c_2)
+                    new_table[c_2_name].append(self.database_tables[table_2][c_2][r_2])
+        # print(new_table)  
         return new_table
     
 
@@ -1162,7 +1174,7 @@ class System:
                     pro_data_table[col_name] = [sum(data_table[col])/len(data_table[col])]
         
         return pro_data_table
-            
+    
     def group_by(self,data_table:dict,group_columns:list,having_condition:list,table_cols:list,agg_func:list):
         # 改了十遍！！！！！！！我真的不想再改了！！！！！！
         # 啊啊啊啊啊啊啊啊
@@ -1366,6 +1378,12 @@ class System:
     #####################################################
     #################    select 结束    ##################
     #####################################################
+
+
+    
+
+
+    
 
 if __name__=='__main__':
     mySystem=System()

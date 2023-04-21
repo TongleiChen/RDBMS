@@ -1123,7 +1123,7 @@ class CREATE_TABLE_tree_Evaluator:
         if tree.data == "start":
             self.eval_tree(tree.children[0]) # create_statement
         elif tree.data == "create_statement":
-            self.table_name=tree.children[0].children[0] # table_name
+            self.table_name=tree.children[0].children[0].value # table_name
             self.eval_tree(tree.children[1]) # field_list
         elif tree.data == "field_list":
             for child in tree.children:
@@ -1176,10 +1176,128 @@ def GET_EVALUATOR_from_Query(query):
             EVALUATOR=CREATE_INDEX_tree_Evaluator(CREATE_INDEX_SQL_Grammar,query)
         elif option=="DROPINDEX":
             EVALUATOR=DROP_INDEX_tree_Evaluator(DROP_INDEX_SQL_Grammar,query)
+        elif option=="DELETE":
+            EVALUATOR=DELETE_tree_Evaluator(DELETE_SQL_Grammar,query)
         else:
             raise ValueError(f"Invalid syntax query")
         
-        return EVALUATOR
+        return option, EVALUATOR
+
+def EXECUTE(db_system:System,query:str):
+    option,parser = GET_EVALUATOR_from_Query(query)
+    if option=="SELECT":
+        return SELECT(db_system,parser)
+    elif option=="CREATETABLE":
+        CREATE(db_system,parser)
+    elif option=="DROPTABLE":
+        DROP(db_system,parser)
+    elif option=="UPDATE":
+        UPDATE(db_system,parser)
+    elif option=="INSERT":
+        INSERT(db_system,parser)
+    elif option=="DELETE":
+        DELETE(db_system,parser)
+    return
+
+def UPDATE(db_system:System,update_parser:UPDATE_tree_Evaluator):
+    update_parser.get_result()
+    db_system.update_data(update_parser.table_name,update_parser.update_clause,update_parser.where_clause)
+    # update_answer = "UPDATE {} SUCCESSFULLY. ".format(update_parser.table_name)
+    return
+
+
+def INSERT(db_system:System,insert_parser:INSERT_tree_Evaluator):
+    insert_parser.get_result()
+    db_system.insert_data(insert_parser.table_name,insert_parser.insert_cols,insert_parser.insert_vals)
+
+    return
+
+
+def DELETE(db_system:System,delete_parser:DELETE_tree_Evaluator):
+    delete_parser.get_result()
+    db_system.delete_data_dict(delete_parser.table_name,delete_parser.where_clause)
+
+    return
+
+
+def DROP(db_system:System,drop_parser:DROP_TABLE_tree_Evaluator):
+    drop_parser.get_result()
+    db_system.drop_table_dict(drop_parser.table_name)
+
+    return
+
+def CREATE(db_system:System,create_parser:CREATE_TABLE_tree_Evaluator):
+    create_parser.get_result()
+    db_system.create_table_dict(create_parser.table_name,create_parser.attributes_clause)
+
+
+def SELECT(db_system:System,select_parser:new_SELECT_tree_Evaluator):
+    select_parser.get_result()
+    selection_clause = select_parser.selection_clause
+    from_clause = select_parser.from_clause[0] # one table 
+    option = select_parser.option
+    select_all_flag = selection_clause['all_flag']
+
+    if select_all_flag == True:
+        select_columns = list(db_system.database_tables[from_clause].keys())
+    else:
+        select_columns = selection_clause['cols']
+    select_tables = selection_clause['tables']
+    select_agg = selection_clause['agg_fun']
+    where_clause = option['where_clause']
+    order_by_clause = option['order_by_clause']
+    group_by_clause = option['group_having_clause']
+    theta_join_clause = option['theta_join_clause']
+
+    if len(theta_join_clause) != 0:
+        # SIMPLE INNER JOIN
+        projection_cols_1 = []
+        projection_cols_2 = []
+        for idx,col in enumerate(select_columns):
+            if select_tables[idx] == from_clause:
+                projection_cols_1.append(col)
+            else:
+                projection_cols_2.append(col)
+        print("HERE")
+        
+        join_table = db_system.nested_loop_join(table_1=from_clause,
+                                table_1_col=theta_join_clause[2],
+                                table_2=theta_join_clause[0],
+                                table_2_col=theta_join_clause[5],
+                                projection_cols_1=projection_cols_1,
+                                projection_cols_2=projection_cols_2
+                                )
+        return join_table
+    temp_data_table = db_system.database_tables[from_clause]
+    if len(where_clause) != 0:
+        # apply where
+        temp_data_table,_ = db_system.select_where(relation_name = from_clause,
+                                                conditions = where_clause)
+    if len(group_by_clause) != 0:
+        temp_data_table = db_system.group_by(data_table = temp_data_table,
+                                        group_columns = [group_by_clause[0]],
+                                        having_condition = group_by_clause[1:],
+                                        table_cols = select_columns,
+                                        agg_func = select_agg
+                                        )
+        
+        if len(order_by_clause) != 0:
+            temp_data_table = db_system.order_by(table_data = temp_data_table,
+                                            order_cols = [order_by_clause[0]],
+                                            sort = order_by_clause[1])
+        return temp_data_table
+    if len(order_by_clause) != 0:
+        temp_data_table = db_system.order_by(table_data = temp_data_table,
+                                            order_cols = [order_by_clause[0]],
+                                            sort = order_by_clause[1])
+    
+    temp_data_table = db_system.projection(data_table = temp_data_table,
+                    cols = select_columns,
+                    agg_fun = select_agg
+                    )
+
+    return temp_data_table
+
 
 if __name__=='__main__':
     #test_query="SELECT age FROM name_age INNER JOIN name_age ON name_age1.name=name_age2.name;"
@@ -1190,264 +1308,336 @@ if __name__=='__main__':
     #test_query="CREATE INDEX index_nameON table_name (column_name);"
     #test_query="DROP INDEX index_name ON table_name;"
     #test_query="CREATE INDEX index_name ON name_age (name);"
-    test_query="DROP INDEX index_name;"
-    EVALUATOR=GET_EVALUATOR_from_Query(test_query)
-    print(EVALUATOR.get_result())
+    # test_query="DROP INDEX index_name;"
+    # EVALUATOR=GET_EVALUATOR_from_Query(test_query)
+    # print(EVALUATOR.get_result())
 
-    # 1. select grammar
-    # 0410 tested
-    mySystem=System()
-    mySystem.open_database('CLASS')
-    #select_query = "SELECT age FROM name_age INNER JOIN name_age ON name_age1.name=name_age2.name;"
-    #select_query = "SELECT age,MAX(name),name FROM name_age WHERE name='suzy' AND age BETWEEN 12 AND 30;" #where的顺序只能跟列表的顺序一致：
-    select_query = "SELECT age,name,MAX(name) FROM name_age WHERE name='suzy' AND age BETWEEN 12 AND 30;"
-    """
-    select_query = 
-    SELECT name_age.age,name_address.address 
-    FROM name_age 
-    INNER JOIN name_address 
-    ON name_age.name = name_address.name 
-    WHERE name='suzy' AND age BETWEEN 12 AND 30 
-    ORDER BY age ASC;
-    """
-    #select_query ="SELECT height FROM name_height ORDER BY height DESC;"
-    #select_query = "SELECT MAX(age) FROM name_age WHERE name = suzy AND age < 18;"
-    SELECT_SQL_EVALUATOR=new_SELECT_tree_Evaluator(SELECT_SQL_Grammar,select_query)
-    print(SELECT_SQL_EVALUATOR.get_result())
+    # # 1. select grammar
+    # # 0410 tested
+    # mySystem=System()
+    # mySystem.open_database('CLASS')
+    # #select_query = "SELECT age FROM name_age INNER JOIN name_age ON name_age1.name=name_age2.name;"
+    # #select_query = "SELECT age,MAX(name),name FROM name_age WHERE name='suzy' AND age BETWEEN 12 AND 30;" #where的顺序只能跟列表的顺序一致：
+    # select_query = "SELECT age,name,MAX(name) FROM name_age WHERE name='suzy' AND age BETWEEN 12 AND 30;"
+    # """
+    # select_query = 
+    # SELECT name_age.age,name_address.address 
+    # FROM name_age 
+    # INNER JOIN name_address 
+    # ON name_age.name = name_address.name 
+    # WHERE name='suzy' AND age BETWEEN 12 AND 30 
+    # ORDER BY age ASC;
+    # """
+    # #select_query ="SELECT height FROM name_height ORDER BY height DESC;"
+    # #select_query = "SELECT MAX(age) FROM name_age WHERE name = suzy AND age < 18;"
+    # SELECT_SQL_EVALUATOR=new_SELECT_tree_Evaluator(SELECT_SQL_Grammar,select_query)
+    # print(SELECT_SQL_EVALUATOR.get_result())
 
 
     
-    # 2. create grammar
-    create_query = """
-    CREATE TABLE customers (
-    id INT NOT NULL,
-    name VARCHAR(50),
-    age INT PRIMARY KEY,
-    email VARCHAR(100) NOT NULL,
-    FOREIGN KEY (customer_id) REFERENCES Customers(customer_id)
-    );
-    """
-    CREATE_SQL_EVALUATOR=CREATE_TABLE_tree_Evaluator(CREATE_TABLE_SQL_Grammar,create_query)
-    print(CREATE_SQL_EVALUATOR.get_result())
-    # mySystem.create_table_dict(CREATE_SQL_EVALUATOR.table_name.value,CREATE_SQL_EVALUATOR.attributes_clause)
-    print(mySystem.database_tables)
-    print(mySystem.table_attributes)
-    print(mySystem.table_path)
-    
-    print("==============================")
-    # create_foreign_key = '''
-    # CREATE TABLE orders (
-    # order_id INT PRIMARY KEY,
-    # customer_id INT,
-    # FOREIGN KEY (customer_id) REFERENCES customers(customer_id)
+    # # 2. create grammar
+    # create_query = """
+    # CREATE TABLE customers (
+    # id INT NOT NULL,
+    # name VARCHAR(50),
+    # age INT PRIMARY KEY,
+    # email VARCHAR(100) NOT NULL,
+    # FOREIGN KEY (customer_id) REFERENCES Customers(customer_id)
     # );
-    # '''
-    # CREATE_SQL_EVALUATOR=CREATE_TABLE_tree_Evaluator(CREATE_TABLE_SQL_Grammar,create_foreign_key)
+    # """
+    # CREATE_SQL_EVALUATOR=CREATE_TABLE_tree_Evaluator(CREATE_TABLE_SQL_Grammar,create_query)
     # print(CREATE_SQL_EVALUATOR.get_result())
-
-
-
-    # 3. drop grammar
-    # 0410 tested
-    drop_query="DROP TABLE customers;"
-    DROP_SQL_EVALUATOR=DROP_TABLE_tree_Evaluator(DROP_TABLE_SQL_Grammar,drop_query)
-    print(DROP_SQL_EVALUATOR.get_result())
-    print(DROP_SQL_EVALUATOR.table_name)
-    mySystem.drop_table_dict(DROP_SQL_EVALUATOR.table_name)
-    print(mySystem.database_tables)
-    print(mySystem.table_attributes)
-    print(mySystem.table_path)
-
-    # 4. update grammar
-    # 0410 tested
-    update_query="UPDATE my_table SET column1 = 'suzy', column2 = 3 WHERE column3 >= 10;"
-    UPDATE_SQL_EVALUATOR=UPDATE_tree_Evaluator(UPDATE_SQL_Grammar,update_query)
-    print(UPDATE_SQL_EVALUATOR.get_result())
-
-    
-    # INSERT grammar
-    # 0410 tested
-    insert_query="INSERT INTO name_age (name, age) VALUES ('John', 30);"
-    INSERT_SQL_EVALUATOR=INSERT_tree_Evaluator(INSERT_SQL_Grammar,insert_query)
-    print(INSERT_SQL_EVALUATOR.get_result())
-    
-    data = {}
-    for i,column in enumerate(INSERT_SQL_EVALUATOR.insert_cols):
-        data[column] = INSERT_SQL_EVALUATOR.insert_vals[i]
-    print(data)
-    # mySystem.insert_data(INSERT_SQL_EVALUATOR.table_name,data)
-
-
-    # DELETE grammar
-    # 0410 tested
-    delete_query="DELETE FROM name_age WHERE age < 14 CASCADE;"
-    DELETE_SQL_EVALUATOR=DELETE_tree_Evaluator(DELETE_SQL_Grammar,delete_query)
-    print(DELETE_SQL_EVALUATOR.get_result())
-    mySystem.delete_data_dict(DELETE_SQL_EVALUATOR.table_name,DELETE_SQL_EVALUATOR.where_clause)
-    print(mySystem.database_tables)
-
-    # update_query_2 = "UPDATE name_height SET height = 160 WHERE name = 'suzy';"
-    # UPDATE_SQL_EVALUATOR_2=UPDATE_tree_Evaluator(UPDATE_SQL_Grammar,update_query_2)
-    # DELETE_SQL_EVALUATOR.get_result()
-    # mySystem.update_data(UPDATE_SQL_EVALUATOR_2.table_name,UPDATE_SQL_EVALUATOR_2.update_clause,UPDATE_SQL_EVALUATOR_2.where_clause)
+    # # mySystem.create_table_dict(CREATE_SQL_EVALUATOR.table_name.value,CREATE_SQL_EVALUATOR.attributes_clause)
     # print(mySystem.database_tables)
+    # print(mySystem.table_attributes)
+    # print(mySystem.table_path)
+    
+    # print("==============================")
+    # # create_foreign_key = '''
+    # # CREATE TABLE orders (
+    # # order_id INT PRIMARY KEY,
+    # # customer_id INT,
+    # # FOREIGN KEY (customer_id) REFERENCES customers(customer_id)
+    # # );
+    # # '''
+    # # CREATE_SQL_EVALUATOR=CREATE_TABLE_tree_Evaluator(CREATE_TABLE_SQL_Grammar,create_foreign_key)
+    # # print(CREATE_SQL_EVALUATOR.get_result())
 
-    # update_query="UPDATE name_height SET name = 'suzy' WHERE column3 = 10;"
+
+
+    # # 3. drop grammar
+    # # 0410 tested
+    # drop_query="DROP TABLE customers;"
+    # DROP_SQL_EVALUATOR=DROP_TABLE_tree_Evaluator(DROP_TABLE_SQL_Grammar,drop_query)
+    # print(DROP_SQL_EVALUATOR.get_result())
+    # print(DROP_SQL_EVALUATOR.table_name)
+    # mySystem.drop_table_dict(DROP_SQL_EVALUATOR.table_name)
+    # print(mySystem.database_tables)
+    # print(mySystem.table_attributes)
+    # print(mySystem.table_path)
+
+    # # 4. update grammar
+    # # 0410 tested
+    # update_query="UPDATE my_table SET column1 = 'suzy', column2 = 3 WHERE column3 >= 10;"
     # UPDATE_SQL_EVALUATOR=UPDATE_tree_Evaluator(UPDATE_SQL_Grammar,update_query)
     # print(UPDATE_SQL_EVALUATOR.get_result())
 
-    insert_query="INSERT INTO name_age (id,name, age) VALUES (3,'Chelsea', 18);"
-    INSERT_SQL_EVALUATOR=INSERT_tree_Evaluator(INSERT_SQL_Grammar,insert_query)
-    print(INSERT_SQL_EVALUATOR.get_result())
-
-    mySystem.insert_data(INSERT_SQL_EVALUATOR.table_name,INSERT_SQL_EVALUATOR.insert_cols,INSERT_SQL_EVALUATOR.insert_vals)
-    print(mySystem.database_tables)
-
-
-    update_query="UPDATE name_age SET name = 'YUNI' WHERE age = 13;"
-    UPDATE_SQL_EVALUATOR=UPDATE_tree_Evaluator(UPDATE_SQL_Grammar,update_query)
-    print(UPDATE_SQL_EVALUATOR.get_result())
-    mySystem.update_data(UPDATE_SQL_EVALUATOR.table_name,UPDATE_SQL_EVALUATOR.update_clause,UPDATE_SQL_EVALUATOR.where_clause)
-    print(mySystem.database_tables)
-
-
-
-    select_query = """
-    SELECT name_age.age,name_height.height 
-    FROM name_age 
-    INNER JOIN name_height 
-    ON name_age.name = name_height.name;
-    """
-    #select_query = "SELECT MAX(age) FROM name_age WHERE name = suzy AND age < 18;"
-    SELECT_SQL_EVALUATOR=new_SELECT_tree_Evaluator(SELECT_SQL_Grammar,select_query)
-    print(SELECT_SQL_EVALUATOR.get_result())
-    print("table_1",SELECT_SQL_EVALUATOR.from_clause[0])
-    print("projection_cols_1",[SELECT_SQL_EVALUATOR.selection_clause['cols'][0]])
-    print(mySystem.nested_loop_join(SELECT_SQL_EVALUATOR.from_clause[0],
-                              table_1_col=SELECT_SQL_EVALUATOR.option['theta_join_clause'][2],
-                            table_2 = SELECT_SQL_EVALUATOR.option['theta_join_clause'][0],
-                            table_2_col=SELECT_SQL_EVALUATOR.option['theta_join_clause'][5],
-                            projection_cols_1=[SELECT_SQL_EVALUATOR.selection_clause['cols'][0]],
-                            projection_cols_2=[SELECT_SQL_EVALUATOR.selection_clause['cols'][1]]
-                            ))
     
-    select_query = """
-    SELECT name,height
-    FROM name_height
-    WHERE height < 165 OR height = 170;
-    """
-    #select_query = "SELECT MAX(age) FROM name_age WHERE name = suzy AND age < 18;"
-    SELECT_SQL_EVALUATOR_new=new_SELECT_tree_Evaluator(SELECT_SQL_Grammar,select_query)
-    print(SELECT_SQL_EVALUATOR_new.get_result())
-
-    # output = mySystem.order_by(mySystem.database_tables[SELECT_SQL_EVALUATOR_new.from_clause[0]],order_cols=[SELECT_SQL_EVALUATOR_new.option['order_by_clause'][0]],sort=SELECT_SQL_EVALUATOR_new.option['order_by_clause'][1])
-
-    # print(mySystem.projection(output,SELECT_SQL_EVALUATOR_new.selection_clause['cols']))
-    # print(mySystem.select_where(SELECT_SQL_EVALUATOR_new.from_clause[0],SELECT_SQL_EVALUATOR_new.option['where_clause']))
-
-    select_query = """
-    SELECT MIN(height),age
-    FROM name_height
-    GROUP BY age HAVING COUNT(age) >1;
-    """
-    #select_query = "SELECT MAX(age) FROM name_age WHERE name = suzy AND age < 18;"
-    SELECT_SQL_EVALUATOR_new=new_SELECT_tree_Evaluator(SELECT_SQL_Grammar,select_query)
-    print(SELECT_SQL_EVALUATOR_new.get_result())
-    simple_data = {
-        'name' : ['suzy','yuni','john','chelsea','selina','ella'],
-        'age': [20,20,20,10,14,23],
-        'height': [120,140,150,150,180,190]
-    }
-    # result = 410,150,180,190
-    #          20 ,10, 14, 23
-    print(SELECT_SQL_EVALUATOR_new.option['group_having_clause'][0])
-    print(SELECT_SQL_EVALUATOR_new.option['group_having_clause'][1:])
-    print(SELECT_SQL_EVALUATOR_new.selection_clause['cols'])
-    print(SELECT_SQL_EVALUATOR_new.selection_clause['agg_fun'])
-    print(mySystem.group_by(simple_data,
-                            group_columns=[SELECT_SQL_EVALUATOR_new.option['group_having_clause'][0]],
-                            having_condition=[SELECT_SQL_EVALUATOR_new.option['group_having_clause'][1:]],
-                            table_cols=SELECT_SQL_EVALUATOR_new.selection_clause['cols'],
-                            agg_func=SELECT_SQL_EVALUATOR_new.selection_clause['agg_fun']))
+    # # INSERT grammar
+    # # 0410 tested
+    # insert_query="INSERT INTO name_age (name, age) VALUES ('John', 30);"
+    # INSERT_SQL_EVALUATOR=INSERT_tree_Evaluator(INSERT_SQL_Grammar,insert_query)
+    # print(INSERT_SQL_EVALUATOR.get_result())
     
+    # data = {}
+    # for i,column in enumerate(INSERT_SQL_EVALUATOR.insert_cols):
+    #     data[column] = INSERT_SQL_EVALUATOR.insert_vals[i]
+    # print(data)
+    # # mySystem.insert_data(INSERT_SQL_EVALUATOR.table_name,data)
 
 
+    # # DELETE grammar
+    # # 0410 tested
+    # delete_query="DELETE FROM name_age WHERE age < 14 CASCADE;"
+    # DELETE_SQL_EVALUATOR=DELETE_tree_Evaluator(DELETE_SQL_Grammar,delete_query)
+    # print(DELETE_SQL_EVALUATOR.get_result())
+    # mySystem.delete_data_dict(DELETE_SQL_EVALUATOR.table_name,DELETE_SQL_EVALUATOR.where_clause)
+    # print(mySystem.database_tables)
 
-    select_query = """
-    SELECT AVG(height),SUM(height)
-    FROM name_height;
-    """
-    #select_query = "SELECT MAX(age) FROM name_age WHERE name = suzy AND age < 18;"
-    SELECT_SQL_EVALUATOR_new=new_SELECT_tree_Evaluator(SELECT_SQL_Grammar,select_query)
-    print(SELECT_SQL_EVALUATOR_new.get_result())
-    print(mySystem.projection(# mySystem.database_tables[SELECT_SQL_EVALUATOR_new.from_clause[0]],
-                              simple_data,
-                              SELECT_SQL_EVALUATOR_new.selection_clause['cols'],
-                              SELECT_SQL_EVALUATOR_new.selection_clause['agg_fun']
-                              ))
-    
-    new_system = System()
-    new_system.open_database("CUSTOMERS")
-    # drop_query="DROP TABLE customer_name;"
-    # DROP_SQL_EVALUATOR=DROP_TABLE_tree_Evaluator(DROP_TABLE_SQL_Grammar,drop_query)
-    # print(DROP_SQL_EVALUATOR.get_result())
-    # print(DROP_SQL_EVALUATOR.table_name)
-    # new_system.drop_table_dict(DROP_SQL_EVALUATOR.table_name)
+    # # update_query_2 = "UPDATE name_height SET height = 160 WHERE name = 'suzy';"
+    # # UPDATE_SQL_EVALUATOR_2=UPDATE_tree_Evaluator(UPDATE_SQL_Grammar,update_query_2)
+    # # DELETE_SQL_EVALUATOR.get_result()
+    # # mySystem.update_data(UPDATE_SQL_EVALUATOR_2.table_name,UPDATE_SQL_EVALUATOR_2.update_clause,UPDATE_SQL_EVALUATOR_2.where_clause)
+    # # print(mySystem.database_tables)
 
+    # # update_query="UPDATE name_height SET name = 'suzy' WHERE column3 = 10;"
+    # # UPDATE_SQL_EVALUATOR=UPDATE_tree_Evaluator(UPDATE_SQL_Grammar,update_query)
+    # # print(UPDATE_SQL_EVALUATOR.get_result())
 
-    # drop_query="DROP TABLE orders;"
-    # DROP_SQL_EVALUATOR=DROP_TABLE_tree_Evaluator(DROP_TABLE_SQL_Grammar,drop_query)
-    # print(DROP_SQL_EVALUATOR.get_result())
-    # print(DROP_SQL_EVALUATOR.table_name)
-    # new_system.drop_table_dict(DROP_SQL_EVALUATOR.table_name)
-    # print(new_system.database_tables)
+    # insert_query="INSERT INTO name_age (id,name, age) VALUES (3,'Chelsea', 18);"
+    # INSERT_SQL_EVALUATOR=INSERT_tree_Evaluator(INSERT_SQL_Grammar,insert_query)
+    # print(INSERT_SQL_EVALUATOR.get_result())
+
+    # mySystem.insert_data(INSERT_SQL_EVALUATOR.table_name,INSERT_SQL_EVALUATOR.insert_cols,INSERT_SQL_EVALUATOR.insert_vals)
+    # print(mySystem.database_tables)
 
 
     # update_query="UPDATE name_age SET name = 'YUNI' WHERE age = 13;"
+    # UPDATE_SQL_EVALUATOR=UPDATE_tree_Evaluator(UPDATE_SQL_Grammar,update_query)
+    # print(UPDATE_SQL_EVALUATOR.get_result())
+    # mySystem.update_data(UPDATE_SQL_EVALUATOR.table_name,UPDATE_SQL_EVALUATOR.update_clause,UPDATE_SQL_EVALUATOR.where_clause)
+    # print(mySystem.database_tables)
+
+
+
+    # select_query = """
+    # SELECT name_age.age,name_height.height 
+    # FROM name_age 
+    # INNER JOIN name_height 
+    # ON name_age.name = name_height.name;
+    # """
+    # #select_query = "SELECT MAX(age) FROM name_age WHERE name = suzy AND age < 18;"
+    # SELECT_SQL_EVALUATOR=new_SELECT_tree_Evaluator(SELECT_SQL_Grammar,select_query)
+    # print(SELECT_SQL_EVALUATOR.get_result())
+    # print("table_1",SELECT_SQL_EVALUATOR.from_clause[0])
+    # print("projection_cols_1",[SELECT_SQL_EVALUATOR.selection_clause['cols'][0]])
+    # print(mySystem.nested_loop_join(SELECT_SQL_EVALUATOR.from_clause[0],
+    #                           table_1_col=SELECT_SQL_EVALUATOR.option['theta_join_clause'][2],
+    #                         table_2 = SELECT_SQL_EVALUATOR.option['theta_join_clause'][0],
+    #                         table_2_col=SELECT_SQL_EVALUATOR.option['theta_join_clause'][5],
+    #                         projection_cols_1=[SELECT_SQL_EVALUATOR.selection_clause['cols'][0]],
+    #                         projection_cols_2=[SELECT_SQL_EVALUATOR.selection_clause['cols'][1]]
+    #                         ))
+    
+    # select_query = """
+    # SELECT name,height
+    # FROM name_height
+    # WHERE height < 165 OR height = 170;
+    # """
+    # #select_query = "SELECT MAX(age) FROM name_age WHERE name = suzy AND age < 18;"
+    # SELECT_SQL_EVALUATOR_new=new_SELECT_tree_Evaluator(SELECT_SQL_Grammar,select_query)
+    # print(SELECT_SQL_EVALUATOR_new.get_result())
+
+    # # output = mySystem.order_by(mySystem.database_tables[SELECT_SQL_EVALUATOR_new.from_clause[0]],order_cols=[SELECT_SQL_EVALUATOR_new.option['order_by_clause'][0]],sort=SELECT_SQL_EVALUATOR_new.option['order_by_clause'][1])
+
+    # # print(mySystem.projection(output,SELECT_SQL_EVALUATOR_new.selection_clause['cols']))
+    # # print(mySystem.select_where(SELECT_SQL_EVALUATOR_new.from_clause[0],SELECT_SQL_EVALUATOR_new.option['where_clause']))
+
+    # select_query = """
+    # SELECT MIN(height),age
+    # FROM name_height
+    # GROUP BY age HAVING COUNT(age) >1;
+    # """
+    # #select_query = "SELECT MAX(age) FROM name_age WHERE name = suzy AND age < 18;"
+    # SELECT_SQL_EVALUATOR_new=new_SELECT_tree_Evaluator(SELECT_SQL_Grammar,select_query)
+    # print(SELECT_SQL_EVALUATOR_new.get_result())
+    # simple_data = {
+    #     'name' : ['suzy','yuni','john','chelsea','selina','ella'],
+    #     'age': [20,20,20,10,14,23],
+    #     'height': [120,140,150,150,180,190]
+    # }
+    # # result = 410,150,180,190
+    # #          20 ,10, 14, 23
+    # print(SELECT_SQL_EVALUATOR_new.option['group_having_clause'][0])
+    # print(SELECT_SQL_EVALUATOR_new.option['group_having_clause'][1:])
+    # print(SELECT_SQL_EVALUATOR_new.selection_clause['cols'])
+    # print(SELECT_SQL_EVALUATOR_new.selection_clause['agg_fun'])
+    # print(mySystem.group_by(simple_data,
+    #                         group_columns=[SELECT_SQL_EVALUATOR_new.option['group_having_clause'][0]],
+    #                         having_condition=[SELECT_SQL_EVALUATOR_new.option['group_having_clause'][1:]],
+    #                         table_cols=SELECT_SQL_EVALUATOR_new.selection_clause['cols'],
+    #                         agg_func=SELECT_SQL_EVALUATOR_new.selection_clause['agg_fun']))
+    
+
+
+
+    # select_query = """
+    # SELECT AVG(height),SUM(height)
+    # FROM name_height;
+    # """
+    # #select_query = "SELECT MAX(age) FROM name_age WHERE name = suzy AND age < 18;"
+    # SELECT_SQL_EVALUATOR_new=new_SELECT_tree_Evaluator(SELECT_SQL_Grammar,select_query)
+    # print(SELECT_SQL_EVALUATOR_new.get_result())
+    # print(mySystem.projection(# mySystem.database_tables[SELECT_SQL_EVALUATOR_new.from_clause[0]],
+    #                           simple_data,
+    #                           SELECT_SQL_EVALUATOR_new.selection_clause['cols'],
+    #                           SELECT_SQL_EVALUATOR_new.selection_clause['agg_fun']
+    #                           ))
+    
+    # new_system = System()
+    # new_system.open_database("CUSTOMERS")
+    # # drop_query="DROP TABLE customer_name;"
+    # # DROP_SQL_EVALUATOR=DROP_TABLE_tree_Evaluator(DROP_TABLE_SQL_Grammar,drop_query)
+    # # print(DROP_SQL_EVALUATOR.get_result())
+    # # print(DROP_SQL_EVALUATOR.table_name)
+    # # new_system.drop_table_dict(DROP_SQL_EVALUATOR.table_name)
+
+
+    # # drop_query="DROP TABLE orders;"
+    # # DROP_SQL_EVALUATOR=DROP_TABLE_tree_Evaluator(DROP_TABLE_SQL_Grammar,drop_query)
+    # # print(DROP_SQL_EVALUATOR.get_result())
+    # # print(DROP_SQL_EVALUATOR.table_name)
+    # # new_system.drop_table_dict(DROP_SQL_EVALUATOR.table_name)
+    # # print(new_system.database_tables)
+
+
+    # # update_query="UPDATE name_age SET name = 'YUNI' WHERE age = 13;"
+
+    # # UPDATE_SQL_EVALUATOR=UPDATE_tree_Evaluator(UPDATE_SQL_Grammar,update_query)
+    # # print(UPDATE_SQL_EVALUATOR.get_result())
+    # # new_system.update_data(UPDATE_SQL_EVALUATOR.table_name,UPDATE_SQL_EVALUATOR.update_clause,UPDATE_SQL_EVALUATOR.where_clause)
+    # # print(new_system.database_tables)
+
+    # print(new_system.database_tables)
+    # # delete_query="DELETE FROM orders WHERE id < 14;"
+    # delete_query="DELETE FROM customer_name WHERE id > 1;"
+
+    # DELETE_SQL_EVALUATOR=DELETE_tree_Evaluator(DELETE_SQL_Grammar,delete_query)
+    # print(DELETE_SQL_EVALUATOR.get_result())
+    # new_system.delete_data_dict(DELETE_SQL_EVALUATOR.table_name,DELETE_SQL_EVALUATOR.where_clause)
+    # # print(new_system.database_tables)
+
+    # insert_query="INSERT INTO customer_name (id,customer_name) VALUES (4,'selina');"
+    # INSERT_SQL_EVALUATOR=INSERT_tree_Evaluator(INSERT_SQL_Grammar,insert_query)
+    # print(INSERT_SQL_EVALUATOR.get_result())
+    # new_system.insert_data(INSERT_SQL_EVALUATOR.table_name,INSERT_SQL_EVALUATOR.insert_cols,INSERT_SQL_EVALUATOR.insert_vals)
+    # # print(new_system.database_tables)
+    # # print("$$$$$$$$",new_system.foreign_key['foreign_key_1'])
+    # # insert_query="INSERT INTO orders (id,customer_id) VALUES (40,3);"
+
+    # insert_query="INSERT INTO orders (id,customer_id) VALUES (40,5);"
+    # INSERT_SQL_EVALUATOR=INSERT_tree_Evaluator(INSERT_SQL_Grammar,insert_query)
+    # print(INSERT_SQL_EVALUATOR.get_result())
+    # new_system.insert_data(INSERT_SQL_EVALUATOR.table_name,INSERT_SQL_EVALUATOR.insert_cols,INSERT_SQL_EVALUATOR.insert_vals)
+    # # print(new_system.database_tables)
+
+    # # update_query="UPDATE orders SET customer_id = 4 WHERE id = 10;"
+    # update_query="UPDATE orders SET customer_id = 5 WHERE id = 10;"
+
+    # UPDATE_SQL_EVALUATOR=UPDATE_tree_Evaluator(UPDATE_SQL_Grammar,update_query)
+    # print(UPDATE_SQL_EVALUATOR.get_result())
+    # new_system.update_data(UPDATE_SQL_EVALUATOR.table_name,UPDATE_SQL_EVALUATOR.update_clause,UPDATE_SQL_EVALUATOR.where_clause)
+    # # print(new_system.database_tables)
+    # # update_query="UPDATE customer_name SET id = 5 WHERE id = 0;"
+    # update_query="UPDATE customer_name SET id = 5 WHERE id = 1;"
+
 
     # UPDATE_SQL_EVALUATOR=UPDATE_tree_Evaluator(UPDATE_SQL_Grammar,update_query)
     # print(UPDATE_SQL_EVALUATOR.get_result())
     # new_system.update_data(UPDATE_SQL_EVALUATOR.table_name,UPDATE_SQL_EVALUATOR.update_clause,UPDATE_SQL_EVALUATOR.where_clause)
     # print(new_system.database_tables)
 
-    print(new_system.database_tables)
-    # delete_query="DELETE FROM orders WHERE id < 14;"
-    delete_query="DELETE FROM customer_name WHERE id > 1;"
 
-    DELETE_SQL_EVALUATOR=DELETE_tree_Evaluator(DELETE_SQL_Grammar,delete_query)
-    print(DELETE_SQL_EVALUATOR.get_result())
-    new_system.delete_data_dict(DELETE_SQL_EVALUATOR.table_name,DELETE_SQL_EVALUATOR.where_clause)
-    # print(new_system.database_tables)
+    # # select_query = "SELECT age,name,MAX(name) FROM name_age WHERE name='suzy' AND age BETWEEN 12 AND 30;"
 
-    insert_query="INSERT INTO customer_name (id,customer_name) VALUES (4,'selina');"
-    INSERT_SQL_EVALUATOR=INSERT_tree_Evaluator(INSERT_SQL_Grammar,insert_query)
-    print(INSERT_SQL_EVALUATOR.get_result())
-    new_system.insert_data(INSERT_SQL_EVALUATOR.table_name,INSERT_SQL_EVALUATOR.insert_cols,INSERT_SQL_EVALUATOR.insert_vals)
-    # print(new_system.database_tables)
-    # print("$$$$$$$$",new_system.foreign_key['foreign_key_1'])
-    # insert_query="INSERT INTO orders (id,customer_id) VALUES (40,3);"
+    # select_query = '''
+    # SELECT name_age.age,name_address.address 
+    # FROM name_age 
+    # INNER JOIN name_address 
+    # ON name_age.name = name_address.name 
+    # WHERE name='suzy' AND age BETWEEN 12 AND 30 
+    # ORDER BY age ASC;
+    # '''
 
-    insert_query="INSERT INTO orders (id,customer_id) VALUES (40,5);"
-    INSERT_SQL_EVALUATOR=INSERT_tree_Evaluator(INSERT_SQL_Grammar,insert_query)
-    print(INSERT_SQL_EVALUATOR.get_result())
-    new_system.insert_data(INSERT_SQL_EVALUATOR.table_name,INSERT_SQL_EVALUATOR.insert_cols,INSERT_SQL_EVALUATOR.insert_vals)
-    # print(new_system.database_tables)
+    # # select_query = """
+    # # SELECT MIN(height),age
+    # # FROM name_height
+    # # GROUP BY age HAVING COUNT(age) >1;
+    # # """
+    # #select_query ="SELECT height FROM name_height ORDER BY height DESC;"
+    # #select_query = "SELECT MAX(age) FROM name_age WHERE name = suzy AND age < 18;"
+    # SELECT_SQL_EVALUATOR=new_SELECT_tree_Evaluator(SELECT_SQL_Grammar,select_query)
+    # print(SELECT_SQL_EVALUATOR.get_result())
 
-    # update_query="UPDATE orders SET customer_id = 4 WHERE id = 10;"
-    update_query="UPDATE orders SET customer_id = 5 WHERE id = 10;"
 
-    UPDATE_SQL_EVALUATOR=UPDATE_tree_Evaluator(UPDATE_SQL_Grammar,update_query)
-    print(UPDATE_SQL_EVALUATOR.get_result())
-    new_system.update_data(UPDATE_SQL_EVALUATOR.table_name,UPDATE_SQL_EVALUATOR.update_clause,UPDATE_SQL_EVALUATOR.where_clause)
-    # print(new_system.database_tables)
-    # update_query="UPDATE customer_name SET id = 5 WHERE id = 0;"
+
+
+
+
+
+
+    print("+++++++++++++++++++++++++++")
+    test_system = System()
+    print(test_system.open_database('CUSTOMERS'))
+    delete_query="DELETE FROM customer_name WHERE id < 1;"
+    EXECUTE(test_system,delete_query)
+    print(test_system.database_tables)
+    print("+++++++++++++++++++++++++++")
     update_query="UPDATE customer_name SET id = 5 WHERE id = 1;"
+    EXECUTE(test_system,update_query)
+    print(test_system.database_tables)
+    drop_query="DROP TABLE customer_name;"
+    EXECUTE(test_system,drop_query)
+    print(test_system.database_tables)
+    insert_query="INSERT INTO customer_name (id,customer_name) VALUES (4,'selina');"
+    EXECUTE(test_system,insert_query)
+    print(test_system.database_tables)
+    select_query_1 = 'SELECT customer_name.customer_name, orders.id FROM orders INNER JOIN customer_name ON orders.customer_id = customer_name.id;'
+    print(EXECUTE(test_system,select_query_1))
+    print(test_system.database_tables)
+    select_query_2 = 'SELECT customer_id, id FROM orders WHERE customer_id > 1 ORDER BY id DESC;'
+    print(EXECUTE(test_system,select_query_2))
+    select_query_3 = 'SELECT COUNT(customer_id) FROM orders WHERE customer_id > 1;'
+    print(EXECUTE(test_system,select_query_3))
+    select_query_4 = 'SELECT MAX(customer_id),id FROM orders WHERE customer_id > 1 GROUP BY id ORDER BY id DESC;'
+    print(EXECUTE(test_system,select_query_4))
+    drop_query="DROP TABLE orders;"
+    EXECUTE(test_system,drop_query)
+    # create_query = "CREATE TABLE orders (id INT PRIMARY KEY, customer_id INT);"
+
+    # EXECUTE(test_system,create_query)
+    print(test_system.database_tables)
+    create_query = 'CREATE TABLE orders (id INT PRIMARY KEY, customer_id INT, FOREIGN KEY (customer_id) REFERENCES customer_name(id));'
+    EXECUTE(test_system,create_query)
+    print(test_system.database_tables)
+    insert_query="INSERT INTO orders (id,customer_id) VALUES (4,1);"
+    EXECUTE(test_system,insert_query)
+    print(test_system.database_tables)
+    insert_query="INSERT INTO orders (id,customer_id) VALUES (4,5);"
+    EXECUTE(test_system,insert_query)
+    print(test_system.database_tables)
 
 
-    UPDATE_SQL_EVALUATOR=UPDATE_tree_Evaluator(UPDATE_SQL_Grammar,update_query)
-    print(UPDATE_SQL_EVALUATOR.get_result())
-    new_system.update_data(UPDATE_SQL_EVALUATOR.table_name,UPDATE_SQL_EVALUATOR.update_clause,UPDATE_SQL_EVALUATOR.where_clause)
-    print(new_system.database_tables)
 
 
 
@@ -1456,3 +1646,5 @@ if __name__=='__main__':
 
 
 
+    
+    
