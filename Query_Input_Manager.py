@@ -179,9 +179,11 @@ CREATE_TABLE_SQL_Grammar = """
     
     table_name: CNAME
 
-    field_list: field_definition ("," field_definition)*
+    field_list: field_definition ("," field_definition)* ("," foreign_key)*
 
     field_definition: attribute_name data_type field_constraints?
+
+    foreign_key: "FOREIGN KEY" "(" attribute_name ")" "REFERENCES" table_name "(" attribute_name ")"
     
     attribute_name: CNAME
 
@@ -190,10 +192,11 @@ CREATE_TABLE_SQL_Grammar = """
     VCHR: "VARCHAR" "(" /[0-9]+/ ")"
     data_type: INT | FT | VCHR
 
-    NOTNULL: "NOT NULL"
-    KEY: "PRIMARY KEY" | "FOREIGN KEY"
-    field_constraints: NOTNULL | KEY
+    field_constraints: NOT_NULL | PRIMARY_KEY 
     
+    NOT_NULL: "NOT NULL"i
+    PRIMARY_KEY: "PRIMARY KEY"i
+
     end:";"
 
 """
@@ -1107,7 +1110,7 @@ class CREATE_TABLE_tree_Evaluator:
         self.query=query
         self.result=BeautifulTable()
         self.table_name=None # Name of Table being create
-        self.attributes_clause={"names":[],"data_type":[],"constraints":[]} # Where clause list
+        self.attributes_clause={"names":[],"data_type":[],"constraints":[],"foreign_keys_for_table":[]} # Where clause list
     def get_result(self):
         tree=self.parser.parse(self.query)
         self.eval_tree(tree)
@@ -1125,14 +1128,30 @@ class CREATE_TABLE_tree_Evaluator:
         elif tree.data == "field_list":
             for child in tree.children:
                 self.eval_tree(child) # field definition
+    # field_list: field_definition ("," field_definition)* (foreign_key)*
+    # field_definition: attribute_name data_type field_constraints?
+    # field_constraints: not_null | primary_key 
+    
+    # not_null: "NOT NULL"
+    # primary_key: "PRIMARY KEY" 
+    # foreign_key: "FOREIGN KEY" "(" attribute_name ")" "REFERENCES" table_name "(" attribute_name ")"
         elif tree.data == "field_definition":
+            print("field_definition")
             self.attributes_clause["names"].append(tree.children[0].children[0].value)
             self.attributes_clause["data_type"].append(tree.children[1].children[0].value)
             if len(tree.children)==2:
                 self.attributes_clause["constraints"].append("None")
-            elif len(tree.children)==3:
-                self.attributes_clause["constraints"].append(tree.children[2].children[0].value)
-
+            elif len(tree.children)==3: # field_constraints
+                self.eval_tree(tree.children[2])
+        elif tree.data == "foreign_key":
+            print(tree)
+            temp=[]
+            temp.append(tree.children[0].children[0].value)
+            temp.append(tree.children[1].children[0].value)
+            temp.append(tree.children[2].children[0].value)
+            self.attributes_clause["foreign_keys_for_table"].append(temp)
+        elif tree.data=="field_constraints":
+            self.attributes_clause["constraints"].append(tree.children[0].value)
         else:
             raise ValueError(f"Invalid syntax query")
 
@@ -1181,7 +1200,7 @@ if __name__=='__main__':
     mySystem.open_database('CLASS')
     #select_query = "SELECT age FROM name_age INNER JOIN name_age ON name_age1.name=name_age2.name;"
     #select_query = "SELECT age,MAX(name),name FROM name_age WHERE name='suzy' AND age BETWEEN 12 AND 30;" #where的顺序只能跟列表的顺序一致：
-    select_query = "SELECT name,MAX(name) FROM name_age WHERE name='suzy' AND age BETWEEN 12 AND 30;"
+    select_query = "SELECT age,name,MAX(name) FROM name_age WHERE name='suzy' AND age BETWEEN 12 AND 30;"
     """
     select_query = 
     SELECT name_age.age,name_address.address 
@@ -1201,10 +1220,11 @@ if __name__=='__main__':
     # 2. create grammar
     create_query = """
     CREATE TABLE customers (
-    id INT PRIMARY KEY,
-    name VARCHAR(50) NOT NULL,
+    id INT NOT NULL,
+    name VARCHAR(50),
     age INT PRIMARY KEY,
-    email VARCHAR(100) NOT NULL
+    email VARCHAR(100) NOT NULL,
+    FOREIGN KEY (customer_id) REFERENCES Customers(customer_id)
     );
     """
     CREATE_SQL_EVALUATOR=CREATE_TABLE_tree_Evaluator(CREATE_TABLE_SQL_Grammar,create_query)
