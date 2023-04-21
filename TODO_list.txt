@@ -20,4 +20,9 @@
     (2) AVG, COUNT
     (3) aggregation 不是放 select clause 的第一个
     (4) 暂时想不到
+
+0420: 
+1. create index
+2. foreign key
+3. select!
 -1. 活着

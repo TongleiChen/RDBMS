@@ -10,3 +10,10 @@ select 到底是个什么顺序我真的谢谢啊啊啊😨
 
 
 0419: JOIN apply projection inside, GROUP BY apply projection inside
+
+PROJECTION!!!!
+
+select plan:
+1. If join ===> join
+2. elif group by ===> group by 
+3. 
