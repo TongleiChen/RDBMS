@@ -1,5 +1,7 @@
 table_name, attribute_name, data_type, primary_key
-name_age,name,String,True
+name_age,id,INT,True
+name_age,name,String,False
 name_age,age,INT,False
-name_height,name,String,True
+name_height,id,INT,True
+name_height,name,String,False
 name_height,height,INT,False

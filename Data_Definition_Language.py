@@ -3,6 +3,7 @@ import os
 import shutil
 import copy
 from BTrees.OOBTree import OOBTree
+import pickle
 
 
 
@@ -15,11 +16,19 @@ class System:
         self.database_name = None
         self.tables_filepath = None
         self.columns_filepath = None
+        self.constraint_filepath = None
         self.table_path = {}
         self.table_attributes = {} # dict: "table_1" = {'column_1':['INT','True'],'column_2':['STRING','False']}
         self.database_tables = {}
         self.table_index = {}
         self.index_table_name = {} #useless right now
+        # 0 --> 1
+        self.foreign_key = {'foreign_key_0':{},
+                            'foreign_key_1':{}
+                            }
+        
+        # table_0:{"table_1":[table_1_name],"col_0":[col_name_0],"col_1":[col_name_1]}
+        # table_1:{"table_0":[table_0_name],"col_0":[col_name_0],"col_1":[col_name_1]}
 
 
     
@@ -45,16 +54,36 @@ class System:
 
                 # TODO:
                 # Foreign key?
-                f.write('table_name, attribute_name, data_type, primary_key, foreign_key\n')
+                f.write('table_name, attribute_name, data_type, primary_key\n')
             
             print(self.database_name, "CREATED SUCCESSFULLY. ")
+    def save_constraint(self):
+        # self.constraint_filepath = os.path.join(self.database_name,'CONSTRAINT.const')
+        with open(self.constraint_filepath,'wb') as f:
+            pickle.dump(self.foreign_key,f)
 
+    def load_constraint(self):
+        with open(self.constraint_filepath,'rb') as f:
+            self.foreign_key = pickle.load(f)
 
+    def create_fake_constraint(self):
+
+        self.foreign_key = {'foreign_key_0':{'orders':{"table_1":['customer_name'],
+                                    "col_0":["customer_id"],
+                                    "col_1":['id']
+                                    }},
+                    'foreign_key_1':{'customer_name':{"table_0":["orders"],
+                                    "col_0":["customer_id"],
+                                    "col_1":["id"]
+                                    }}
+                    }
     def open_database(self,database_name):
         # YUNI: 0408 Tested
         self.database_name = database_name
         self.tables_filepath = os.path.join(self.database_name,'TABLES.csv')
         self.columns_filepath = os.path.join(self.database_name,'COLUMNS.csv')
+        self.constraint_filepath = os.path.join(self.database_name,'CONSTRAINT.const')
+
         with open(self.tables_filepath,'r') as f:
             f.readline()
             for line in f.readlines():
@@ -77,6 +106,9 @@ class System:
         for table in self.table_path.keys():
             print(table)
             self.database_tables[table] = self.get_data(table)
+        # read index
+        self.read_index()
+        self.load_constraint()
         return self.database_tables
     
     def Drop_Database(self):
@@ -138,7 +170,7 @@ class System:
         return
     
     
-    def create_table_dict(self,relation_name:str,attribute:dict):
+    def create_table_dict(self,relation_name:str,attribute:dict,references:str,reference_col:str):
 
         # YUNI: 0415 TESTED
         if relation_name in self.table_path:
@@ -165,17 +197,95 @@ class System:
                 self.table_attributes[relation_name][col_name_i].append("True")
             else:
                 self.table_attributes[relation_name][col_name_i].append("False")
+            if col_constraints[col_idx] == 'FOREIGN KEY':
+                # TODO: check references
+                # 0 --> 1
+                # relation_name -> references
+                # add to relation_0
+                col_1_name = self.find_primary_key(references)[0]
+                if col_1_name != reference_col:
+                    # TODO: raise error
+                    print("FOREIGN KEY ERROR: Reference column is not a primary key. ")
+                if relation_name not in self.foreign_key['foreign_key_0']:
+                    self.foreign_key['foreign_key_0'][relation_name] = {"table_1":[references],
+                                                     "col_0":[col_name_i],
+                                                     "col_1":[col_1_name]
+                                                     }
+                
+
+                    # add to relation_1
+                    self.foreign_key['foreign_key_1'][references] = {"table_0":[relation_name],
+                                                        "col_0":[col_name_i],
+                                                        "col_1":[col_1_name]
+                                                        }
+                else:
+                    self.foreign_key['foreign_key_0'][relation_name]['table_1'].append(references)
+                    self.foreign_key['foreign_key_0'][relation_name]['col_0'].append(col_name_i)
+                    self.foreign_key['foreign_key_0'][relation_name]['col_1'].append(col_1_name)
+
+                    self.foreign_key['foreign_key_1'][references]["table_0"].append(relation_name)
+                    self.foreign_key['foreign_key_1'][references]["col_0"].append(relation_name)
+                    self.foreign_key['foreign_key_1'][references]["col_1"].append(relation_name)
+
+
+
+
         # add to database
+
         
 
         return
     
+    def create_fake_index(self):
+        for data_table in self.database_tables.keys():
+            self.create_index(data_table,"simple_name")
+
+
+
+    def store_index(self):
+        for data_table in self.table_index.keys():
+            btree_file_name = os.path.join(self.database_name,"{}.tree".format(data_table))
+            with open(btree_file_name,'wb') as f:
+                pickle.dump(self.table_index[data_table],f)
+
+    def read_index(self):
+        for data_table in self.database_tables.keys():
+            btree_file_name = os.path.join(self.database_name,"{}.tree".format(data_table))
+            with open(btree_file_name,'rb') as f:
+                read_tree = pickle.load(f)
+                self.table_index[data_table] = read_tree
+
     def drop_table_dict(self,relation_name:str):
 
         # YUNI: 0415 TESTED
         # delete path
         # delete attributes
         # delete database
+        # YUNI: 0420 check foreign key
+        # YUNI: 0420 single foreign key TESTED
+        if relation_name in self.foreign_key['foreign_key_1']:
+            print("DROP ERROR: Violate the foreign key constraint. ")
+            return
+        
+        if relation_name in self.foreign_key['foreign_key_0']:
+            drop_constraint = self.foreign_key['foreign_key_0'].pop(relation_name)
+            # delete from foreign_key_1
+            # 不理解为什么当时我不把他们放一起我是不是有病
+
+            table_1_list = drop_constraint['table_1']
+            column_0_list = drop_constraint['col_0']
+            column_1_list = drop_constraint['col_1']
+            for idx,table_1_name in enumerate(table_1_list):
+                col_0_name = column_0_list[idx]
+                col_1_name = column_1_list[idx]
+                self.foreign_key['foreign_key_1'][table_1_name]['table_0'].remove(relation_name)
+                self.foreign_key['foreign_key_1'][table_1_name]['col_0'].remove(col_0_name)
+                self.foreign_key['foreign_key_1'][table_1_name]['col_1'].remove(col_1_name)
+
+            if len(self.foreign_key['foreign_key_1'][table_1_name]['table_0']) == 0:
+                del self.foreign_key['foreign_key_1'][table_1_name]
+            
+
         if relation_name not in self.table_path:
             print("DROP ERROR: Table does not exist.")
             return
@@ -183,6 +293,8 @@ class System:
         del self.table_attributes[relation_name]
         del self.database_tables[relation_name]
         
+        
+
         return
 
 
@@ -251,11 +363,11 @@ class System:
 
     #     print("INSERT SUCCESSFULLY. ")
     #     return
-    def insert_data(self,relation_name,insert_cols,insert_vals):
+    def insert_data(self,relation_name:str,insert_cols:list,insert_vals:list):
 
 
         # check duplicates
-
+        # TODO: Check len(insert_col) 
         primary_key_list = self.find_primary_key(relation_name)
         inserted_primary_key = []
         for i,column in enumerate(insert_cols):
@@ -263,6 +375,7 @@ class System:
                 try_insert_list = copy.deepcopy(self.database_tables[relation_name][column])
                 if self.table_attributes[relation_name][column][0] == 'INT':
                     try_insert_list.append(int(insert_vals[i]))
+                    insert_vals[i] = int(insert_vals[i])
                 else:
                     try_insert_list.append(insert_vals[i])
                 inserted_primary_key.append(try_insert_list)
@@ -270,6 +383,31 @@ class System:
             print("Insertion ERROR: There exists DUPLICATES. ")
             return
         # TODO: insert_col not null check?
+        
+        if relation_name in self.foreign_key['foreign_key_0']:
+            table_1_list = self.foreign_key['foreign_key_0'][relation_name]['table_1']
+            col_0_list = self.foreign_key['foreign_key_0'][relation_name]['col_0']
+            col_1_list = self.foreign_key['foreign_key_0'][relation_name]['col_1'] # primary key TODO: index
+            for idx,table_1 in enumerate(table_1_list):
+                col_0 = col_0_list[idx]
+                col_1 = col_1_list[idx]
+                position = insert_cols.index(col_0)
+                col_0_val = insert_vals[position]
+                try:
+                    col_0_val = int(col_0_val)
+                except:
+                    col_0_val = insert_vals[position]
+                print("****",type(col_0_val))
+                print(self.database_tables[table_1][col_1])
+                print(col_0_val not in self.database_tables[table_1][col_1])
+                if col_0_val not in self.database_tables[table_1][col_1]:
+                    print("INSERT ERROR: Violate the foreign key constraints. ")
+                    return
+                
+
+                
+                
+
         for i,column in enumerate(insert_cols):
             if self.table_attributes[relation_name][column][0] == 'INT':
 
@@ -282,8 +420,10 @@ class System:
         # TODO: NEED TO BE TESTED 0417
         if relation_name in self.table_index:
             # add index for the inserted data
-            inserted_index_value = len(self.database_tables[relation_name][column])
+            inserted_index_value = len(self.database_tables[relation_name][column])-1
             primary_key = primary_key_list[0]
+            print(self.database_tables[relation_name])
+            # print("*******",inserted_index_value)
             inseted_index_key = self.database_tables[relation_name][primary_key][inserted_index_value]
             self.table_index[relation_name].setdefault(inseted_index_key,inserted_index_value)
             
@@ -361,18 +501,45 @@ class System:
             if match_flag == True:
                 delete_row_list.append(i)
         # print("###",delete_row_list)
+
+        # check constraint!
+        if relation_name in self.foreign_key['foreign_key_1']:
+            table_0_list = self.foreign_key['foreign_key_1'][relation_name]['table_0']
+            col_0_list = self.foreign_key['foreign_key_1'][relation_name]['col_0']
+            col_1_list = self.foreign_key['foreign_key_1'][relation_name]['col_1']
+            for idx,table_0 in enumerate(table_0_list):
+                col_0 = col_0_list[idx]
+                col_1 = col_1_list[idx]
+                for delete_i in delete_row_list:
+                    col_1_val = self.database_tables[relation_name][col_1][delete_i]
+                    if col_1_val in self.database_tables[table_0][col_0]:
+                        print("DELETE ERROR: Violate foreign key constraints.")
+                        return
         
+
+
         delete_row_list_reverse = delete_row_list[::-1]
         for delete_idx in delete_row_list_reverse:
             for column in self.table_attributes[relation_name].keys():
+
                 del self.database_tables[relation_name][column][delete_idx]
         
         # update index key after the first delete row!!
         # TODO: NEED TO BE TESTED 0417
+
         if relation_name in self.table_index:
             delete_row_list_first = delete_row_list[0]
+            total_number_row -= len(delete_row_list)
+            primary_key_col = self.find_primary_key(relation_name)[0]
             for update_idx_value in range(delete_row_list_first,total_number_row):
-                update_idx_key = self.database_tables[relation_name][column][update_idx_value]
+                try:
+
+                    update_idx_key = int(self.database_tables[relation_name][primary_key_col][update_idx_value])
+                except:
+                    update_idx_key = self.database_tables[relation_name][primary_key_col][update_idx_value]
+                # print("$$$$$$$$$$$",update_idx_key)
+
+
                 self.table_index[relation_name][update_idx_key] = update_idx_value
             
         return
@@ -486,16 +653,66 @@ class System:
         if self.check_duplicates(primary_update_list) == True:
             print("Insertion ERROR: There exists DUPLICATES. ")
             return
+            
+        # check constraints! 
+        if relation_name in self.foreign_key['foreign_key_0']:
+            # print("&&&&","HERE")
+            table_1_list = self.foreign_key['foreign_key_0'][relation_name]['table_1']
+            col_0_list = self.foreign_key['foreign_key_0'][relation_name]['col_0']
+            col_1_list = self.foreign_key['foreign_key_0'][relation_name]['col_1'] # primary key TODO: index?
+            for u_idx,updating_col in enumerate(update_dict['cols']):
+                for col_0_idx,col_0 in enumerate(col_0_list):
+                    if updating_col == col_0:
+                        # print("&&&&","HERE")
+                        
+
+                        try:
+                            col_0_val = int(update_dict['vals'][u_idx])
+
+                        except:
+                            col_0_val = update_dict['vals'][u_idx]
+
+                        col_1 = col_1_list[col_0_idx]
+                        table_1 = table_1_list[col_0_idx]
+                        # print("&&&&&&&",col_0_val)
+                        if col_0_val not in self.database_tables[table_1][col_1]:
+                            print("INSERT ERROR: Violate the foreign key constraints. ")
+                            return
+        if relation_name in self.foreign_key['foreign_key_1']:
+            print("&&&&","HERE")
+
+            table_0_list = self.foreign_key['foreign_key_1'][relation_name]['table_0']
+            col_0_list = self.foreign_key['foreign_key_1'][relation_name]['col_0']
+            col_1_list = self.foreign_key['foreign_key_1'][relation_name]['col_1'] # primary key TODO: index?
+            for u_idx,updating_col in enumerate(update_dict['cols']):
+                print("&&&&","HERE")
+
+                for col_1_idx,col_1 in enumerate(col_1_list):
+                    if updating_col == col_1:
+                        for update_idx in update_row_list:
+                            col_1_val = self.database_tables[relation_name][updating_col][update_idx]
+                            col_0 = col_0_list[col_1_idx]
+                            table_0 = table_0_list[col_1_idx]
+                            print("****",col_1_val)
+                            if col_1_val in self.database_tables[table_0][col_0]:
+                                print("DELETE ERROR: Violate the foreign key constraints. ")
+                                return
+
+
+
+
+
         for update_idx in update_row_list:
             for j,column in enumerate(update_dict['cols']):
                 print(self.database_tables[relation_name][column])
                 print(update_dict['vals'])
+                origin_val = self.database_tables[relation_name][column][update_idx]
                 self.database_tables[relation_name][column][update_idx] = update_dict['vals'][j]
 
 
                 # TODO: NEED TO BE TESTED 0417
                 if (relation_name in self.table_index) and (column in primary_key_list):
-                    updated_row_num = self.table_index[relation_name].pop(column) # should equal to j
+                    updated_row_num = self.table_index[relation_name].pop(origin_val) # should equal to j
                     self.table_index[relation_name].setdefault(update_dict['vals'][j],updated_row_num)
 
                 
@@ -589,12 +806,19 @@ class System:
     #####################################################
 
     def select_data(self,selection_clause,from_clause,option):
+        
         select_columns = selection_clause['cols']
         col_functions = selection_clause['agg_fun']
         # theta_join = option['theta_join_clause']
 
-    def nested_loop_join(self,table_1:str, table_1_col:str, table_2:str, table_2_col:str,projection_cols_1:list,projection_cols_2:list):
-        # only support join grammar like "SELECT table_1.column, table_2.column from table_1 INNER JOIN table_2 ON table_1.column2 = table_2.column2"
+
+    def nested_loop_join(self,table_1:str, table_1_col:str, 
+                         table_2:str, table_2_col:str,
+                         projection_cols_1:list,projection_cols_2:list):
+        # only support join grammar like 
+        # SELECT table_1.column, table_2.column 
+        # FROM table_1 INNER JOIN table_2 
+        # ON table_1.column2 = table_2.column2;
 
 
         # YUNI 0419 TESTED!
@@ -968,9 +1192,9 @@ class System:
         if len(having_condition) != 0: # have having then do filter
             # filtered_table = copy.deepcopy(empty_table)
             # having condition can be 
-            # 1. about the group by value 
+            # 1. about the "group by" value 
             # OR 
-            # 2. about the aggregate column in select clause
+            # 2. about the "aggregate" column in select clause
             if len(having_condition[0]) == 4:
                 aggregation = having_condition[0][0]
                 agg_col = having_condition[0][1]
@@ -1151,7 +1375,26 @@ if __name__=='__main__':
     # # A1=ATTRIBUTE(*['animal_name','STR',0,True])
     # # A2=ATTRIBUTE(*['animal_age','INT',1,False])
     
-    mySystem.open_database('CLASS')
+    # mySystem.open_database('CLASS')
+    print(mySystem.open_database('CUSTOMERS'))
+
+    # mySystem.drop_table_dict('orders')
+    # print(mySystem.database_tables)
+    # print(mySystem.foreign_key)
+
+    # mySystem.create_fake_constraint()
+
+    # print(mySystem.foreign_key['foreign_key_1'])
+    # mySystem.save_constraint()
+    # mySystem.load_constraint()
+    # print('==================')
+    # print(mySystem.foreign_key)
+
+    # mySystem.create_fake_index()
+    # mySystem.store_index()
+    # mySystem.read_index()
+    
+
     # print(mySystem.find_primary_key('name_height'))
     # mySystem.delete_data('name_age',0)
     # mySystem.Create_Table('name_age',[['name','String',True],['age','INT',False]])
@@ -1175,9 +1418,11 @@ if __name__=='__main__':
     # mySystem.Drop_Database()
     # mySystem.open_databa
     # print(mySystem.check_duplicates([[1,2,1,4],[2,3,2,5]]))
-    mySystem.create_index('name_age')
-    for key, value in mySystem.table_index['name_age'].items():
-        print(key,value)
+    # mySystem.create_index('name_age')
+    # for key, value in mySystem.table_index['name_age'].items():
+    #     print(key,value)
+    # for key, value in mySystem.table_index['name_height'].items():
+    #     print(key,value)
     
 
 

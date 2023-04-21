@@ -1,0 +1,4 @@
+1. relation_0 consider insert
+   relation_1 consider delete/drop
+
+   
