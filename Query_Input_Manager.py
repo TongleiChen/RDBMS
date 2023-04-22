@@ -1311,6 +1311,50 @@ def load_database(database_name) -> System:
     with open(database_file_path, 'rb') as f:
         db_system = pickle.load(f)
     return db_system
+def save_query(db_system:System,query:str):
+    database_file_path = os.path.join("query",db_system.database_name+".txt")
+    with open(database_file_path, "w") as f:
+        f.write(query+"\n")
+
+def checkpoint(db_system:System):
+    database_file_path = os.path.join("query",db_system.database_name+".txt")
+    with open(database_file_path, "w") as f:
+        f.write("<CHECKPOINT>"+"\n")
+    db_system.save_database()
+
+def read_query(db_system:System):
+    database_file_path = os.path.join("query",db_system.database_name+".txt")
+    with open(database_file_path, 'rb') as f:
+        try:  # catch OSError in case of a one line file 
+            f.seek(-2, os.SEEK_END)
+            while f.read(1) != b'\n':
+                f.seek(-2, os.SEEK_CUR)
+        except OSError:
+            return None
+        last_line = f.readline().decode()
+        if last_line == "<CHECKPOINT>"+"\n":
+            return None
+    with open(database_file_path, 'r') as f:
+        query_list = f.readlines()
+        position = -1
+        for line_n,line in enumerate(query_list):
+            if line == "<CHECKPOINT>"+"\n":
+                position = line_n
+        # for 
+
+        return query_list[position+1:]
+def recover(db_system:System):
+    res = read_query(db_system)
+    if res != None:
+        for query in res:
+            EXECUTE(db_system,query)
+        checkpoint(db_system)
+
+        
+    
+
+
+
 
 def DISPLAY_SQL_RESULTS(res):
     table = BeautifulTable()
@@ -1381,6 +1425,9 @@ if __name__=='__main__':
     # EVALUATOR=GET_EVALUATOR_from_Query(test_query)
     # print(EVALUATOR.get_result())
     test_system = load_database("TEST")
+    recover(test_system)
+    query_num = 0
+    
     code = input('Tell Me Your Option: \n Type \'SQL\' to create own query \n Type \'EXAMPLE\' to use some given example queries: \n')
     if code == "sql" or code == "SQL":
         sql = input('Please Input >>> ')
@@ -1388,6 +1435,9 @@ if __name__=='__main__':
         res = EXECUTE(db_system=test_system,query=sql)
         if res != None:
             DISPLAY_SQL_RESULTS(res)
+        else:
+            query_num += 1
+            save_query(test_system,sql)
 		# execution: get result dict
 
         
