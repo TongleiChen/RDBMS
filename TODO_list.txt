@@ -41,3 +41,10 @@ UPDATE✅
 INSERT✅
 DELETE✅
 DROP✅
+
+
+
+
+0422:
+1. Execution: JOIN: sorted merge and (✅) nested loop join
+2. conjunctive and disjunctive 

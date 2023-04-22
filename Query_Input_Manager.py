@@ -11,6 +11,7 @@ import os
 import pickle
 import warnings
 warnings.filterwarnings("ignore")
+import traceback
 
 CHECKPOINT_QUERY_NUM = 3
 
@@ -1475,7 +1476,11 @@ if __name__=='__main__':
             if sql=="exit" or sql=="EXIT":
                 break
             # EVALUATOR=GET_EVALUATOR_from_Query(sql)
-            res = EXECUTE(db_system=test_system,query=sql)
+            try:
+                res = EXECUTE(db_system=test_system,query=sql)
+            except:
+                traceback.print_exc()
+                continue
             if res != None:
                 DISPLAY_SQL_RESULTS(res)
             else:
