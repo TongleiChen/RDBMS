@@ -1,9 +1,9 @@
 1. (✅) Primary key check duplicates for update and insert data. (If more than one)
-2. How to store Foreign key. Foreign key with insert, delete and update cascade
+2. (✅) How to store Foreign key. Foreign key with insert, delete and update
 3. Create Index: 
     (1). select with index. 
-    (2). (NOT TESTED) When insert, delete and update, update index. 
-4. Execution: JOIN: sorted merge and nested loop join
+    (2). (✅) When insert, delete and update, update index. 
+4. Execution: JOIN: sorted merge and (✅) nested loop join
     inner join only
 5. (✅) Test update function
 6. (✅) Link create, drop, delete sql to Data_Definition_Language system.
@@ -22,7 +22,22 @@
     (4) 暂时想不到
 
 0420: 
-1. create index
-2. foreign key
+1. (✅) create index
+2. (✅) foreign key
 3. select!
 -1. 活着
+
+
+
+
+
+
+
+
+
+SELECT
+CREATE
+UPDATE✅
+INSERT✅
+DELETE✅
+DROP✅
