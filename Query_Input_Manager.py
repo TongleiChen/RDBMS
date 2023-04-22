@@ -1323,7 +1323,7 @@ def DISPLAY_SQL_RESULTS(res):
     
     print(table)
     return table
-mydict={'id': [0, 1, 2, 3, 4], 'customer_name': ['yuni', 'suzy', 'John', 'Lesley', 'selina']}
+# mydict={'id': [0, 1, 2, 3, 4], 'customer_name': ['yuni', 'suzy', 'John', 'Lesley', 'selina']}
 # print(DISPLAY_SQL_RESULTS(mydict))
 
 def examples(option):
@@ -1377,17 +1377,20 @@ if __name__=='__main__':
     #test_query="DROP INDEX index_name ON table_name;"
     #test_query="CREATE INDEX index_name ON name_age (name);"
     
-    test_query="DROP INDEX index_name;"
-    EVALUATOR=GET_EVALUATOR_from_Query(test_query)
-    print(EVALUATOR.get_result())
+    # test_query="DROP INDEX index_name;"
+    # EVALUATOR=GET_EVALUATOR_from_Query(test_query)
+    # print(EVALUATOR.get_result())
+    test_system = load_database("TEST")
     code = input('Tell Me Your Option: \n Type \'SQL\' to create own query \n Type \'EXAMPLE\' to use some given example queries: \n')
     if code == "sql" or code == "SQL":
         sql = input('Please Input >>> ')
         # EVALUATOR=GET_EVALUATOR_from_Query(sql)
-        ...
+        res = EXECUTE(db_system=test_system,query=sql)
+        if res != None:
+            DISPLAY_SQL_RESULTS(res)
 		# execution: get result dict
-        ...
-        DISPLAY_SQL_RESULTS(mydict)
+
+        
     elif code == "example" or code=="EXAMPLE":
         example = input('Choose from given example by typing a name below: \n \t CREATE TABLE \n \t SELECT \n \t UPDATE \n \t INSERT \n \t DELETE \n \t DROP TABLE \n >')
         if example == "CREATE TABLE":
@@ -1740,7 +1743,7 @@ if __name__=='__main__':
     # EXECUTE(test_system,create_query)
     # print(test_system.database_tables)
     # test_system.save_database()
-    test_system = load_database("TEST")
+    
     # print(test_system.database_tables)
 
     # insert_query = "INSERT INTO customer_name (id, customer_name) VALUES (1, 'suzy');"
@@ -1768,18 +1771,18 @@ if __name__=='__main__':
     # EXECUTE(test_system,insert_query_5)
 
 
-    print(test_system.database_tables)
+    # print(test_system.database_tables)
 
-    select_query_1 = 'SELECT customer_name.customer_name, orders.id FROM orders INNER JOIN customer_name ON orders.customer_id = customer_name.id;'
-    print(EXECUTE(test_system,select_query_1))
-    select_query_2 = 'SELECT customer_id, id FROM orders WHERE customer_id > 1 ORDER BY id DESC;'
-    print(EXECUTE(test_system,select_query_2))
-    select_query_3 = 'SELECT COUNT(customer_id) FROM orders WHERE customer_id > 1;'
-    print(EXECUTE(test_system,select_query_3))
-    select_query_4 = 'SELECT MAX(customer_id),id FROM orders WHERE customer_id > 1 GROUP BY id ORDER BY id DESC;'
-    print(EXECUTE(test_system,select_query_4))
+    # select_query_1 = 'SELECT customer_name.customer_name, orders.id FROM orders INNER JOIN customer_name ON orders.customer_id = customer_name.id;'
+    # print(EXECUTE(test_system,select_query_1))
+    # select_query_2 = 'SELECT customer_id, id FROM orders WHERE customer_id > 1 ORDER BY id DESC;'
+    # print(EXECUTE(test_system,select_query_2))
+    # select_query_3 = 'SELECT COUNT(customer_id) FROM orders WHERE customer_id > 1;'
+    # print(EXECUTE(test_system,select_query_3))
+    # select_query_4 = 'SELECT MAX(customer_id),id FROM orders WHERE customer_id > 1 GROUP BY id ORDER BY id DESC;'
+    # print(EXECUTE(test_system,select_query_4))
 
-    test_system.save_database()
+    # test_system.save_database()
 
 
 
