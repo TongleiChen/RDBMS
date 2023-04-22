@@ -6,6 +6,8 @@ from collections import namedtuple
 from lark import Lark
 from beautifultable import BeautifulTable
 from Data_Definition_Language import System
+import warnings
+warnings.filterwarnings("ignore")
 
 # start: database for testing
 # datatables = {
@@ -1181,6 +1183,61 @@ def GET_EVALUATOR_from_Query(query):
         
         return EVALUATOR
 
+def DISPLAY_SQL_RESULTS(res):
+    table = BeautifulTable()
+    table.column_headers = list(res.keys())
+    for i in range(len(res[list(res.keys())[0]])):
+        row = []
+        for key in res.keys():
+            row.append(res[key][i])
+        table.append_row(row)
+    
+    print(table)
+    return table
+mydict={'id': [0, 1, 2, 3, 4], 'customer_name': ['yuni', 'suzy', 'John', 'Lesley', 'selina']}
+# print(DISPLAY_SQL_RESULTS(mydict))
+
+def examples(option):
+	sql_statement = ""
+
+	# CREATE
+	if option == 1:
+		sql_statement = """
+            CREATE TABLE customers (
+            id INT NOT NULL,
+            name VARCHAR(50),
+            age INT PRIMARY KEY,
+            email VARCHAR(100) NOT NULL,
+            FOREIGN KEY (customer_id) REFERENCES Customers(customer_id)
+            );
+    """
+    # SELECT
+	elif option == 2:
+		sql_statement = """
+            SELECT name_age.age,name_address.address 
+            FROM name_age 
+            INNER JOIN name_address 
+            ON name_age.name = name_address.name 
+            WHERE name='suzy' AND age BETWEEN 12 AND 30 
+            ORDER BY age ASC;
+		"""
+	# UPDATE
+	elif option == 3:
+		sql_statement = "UPDATE my_table SET column1 = 'suzy', column2 = 3 WHERE column3 >= 10;"
+                
+	# INSERT
+	elif option == 4:
+		sql_statement = "INSERT INTO name_age (name, age) VALUES ('John', 30);"
+                
+	# DELETE
+	elif option == 5:
+		sql_statement = "DELETE FROM name_age WHERE age < 14 CASCADE;"
+                
+	# DROP TABLE
+	elif option == 6:
+		sql_statement = "DROP TABLE customers;"
+        
+
 if __name__=='__main__':
     #test_query="SELECT age FROM name_age INNER JOIN name_age ON name_age1.name=name_age2.name;"
     #test_query="CREATE TABLE customers (id INT PRIMARY KEY,name VARCHAR(50) NOT NULL,age INT PRIMARY KEY,email VARCHAR(100) NOT NULL);"
@@ -1190,9 +1247,34 @@ if __name__=='__main__':
     #test_query="CREATE INDEX index_nameON table_name (column_name);"
     #test_query="DROP INDEX index_name ON table_name;"
     #test_query="CREATE INDEX index_name ON name_age (name);"
+    
     test_query="DROP INDEX index_name;"
     EVALUATOR=GET_EVALUATOR_from_Query(test_query)
     print(EVALUATOR.get_result())
+    code = input('Tell Me Your Option: \n Type \'SQL\' to create own query \n Type \'EXAMPLE\' to use some given example queries: \n')
+    if code == "sql" or code == "SQL":
+        sql = input('Please Input >>> ')
+        # EVALUATOR=GET_EVALUATOR_from_Query(sql)
+        ...
+		# execution: get result dict
+        ...
+        DISPLAY_SQL_RESULTS(mydict)
+    elif code == "example" or code=="EXAMPLE":
+        example = input('Choose from given example by typing a name below: \n \t CREATE TABLE \n \t SELECT \n \t UPDATE \n \t INSERT \n \t DELETE \n \t DROP TABLE \n >')
+        if example == "CREATE TABLE":
+            examples(1)
+        elif example == "SELECT":
+            examples(2)
+        elif example == "UPDATE":
+            examples(3)
+        elif example == "INSERT":
+            examples(4)
+        elif example == "DELETE":
+            examples(5)
+        elif example == "DROP TABLE":
+            examples(6)
+        else:
+            raise ValueError(f"Invalid syntax query")
 
     # 1. select grammar
     # 0410 tested
@@ -1277,7 +1359,6 @@ if __name__=='__main__':
     print(data)
     # mySystem.insert_data(INSERT_SQL_EVALUATOR.table_name,data)
 
-
     # DELETE grammar
     # 0410 tested
     delete_query="DELETE FROM name_age WHERE age < 14 CASCADE;"
@@ -1303,14 +1384,11 @@ if __name__=='__main__':
     mySystem.insert_data(INSERT_SQL_EVALUATOR.table_name,INSERT_SQL_EVALUATOR.insert_cols,INSERT_SQL_EVALUATOR.insert_vals)
     print(mySystem.database_tables)
 
-
     update_query="UPDATE name_age SET name = 'YUNI' WHERE age = 13;"
     UPDATE_SQL_EVALUATOR=UPDATE_tree_Evaluator(UPDATE_SQL_Grammar,update_query)
     print(UPDATE_SQL_EVALUATOR.get_result())
     mySystem.update_data(UPDATE_SQL_EVALUATOR.table_name,UPDATE_SQL_EVALUATOR.update_clause,UPDATE_SQL_EVALUATOR.where_clause)
     print(mySystem.database_tables)
-
-
 
     select_query = """
     SELECT name_age.age,name_height.height 
@@ -1369,9 +1447,6 @@ if __name__=='__main__':
                             having_condition=[SELECT_SQL_EVALUATOR_new.option['group_having_clause'][1:]],
                             table_cols=SELECT_SQL_EVALUATOR_new.selection_clause['cols'],
                             agg_func=SELECT_SQL_EVALUATOR_new.selection_clause['agg_fun']))
-    
-
-
 
     select_query = """
     SELECT AVG(height),SUM(height)
@@ -1442,7 +1517,6 @@ if __name__=='__main__':
     # print(new_system.database_tables)
     # update_query="UPDATE customer_name SET id = 5 WHERE id = 0;"
     update_query="UPDATE customer_name SET id = 5 WHERE id = 1;"
-
 
     UPDATE_SQL_EVALUATOR=UPDATE_tree_Evaluator(UPDATE_SQL_Grammar,update_query)
     print(UPDATE_SQL_EVALUATOR.get_result())
