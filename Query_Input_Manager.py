@@ -6,6 +6,9 @@ from collections import namedtuple
 from lark import Lark
 from beautifultable import BeautifulTable
 from Data_Definition_Language import System
+import time
+import os
+import pickle
 
 # start: database for testing
 # datatables = {
@@ -1184,6 +1187,7 @@ def GET_EVALUATOR_from_Query(query):
         return option, EVALUATOR
 
 def EXECUTE(db_system:System,query:str):
+    start_time = time.time()
     option,parser = GET_EVALUATOR_from_Query(query)
     if option=="SELECT":
         return SELECT(db_system,parser)
@@ -1197,6 +1201,8 @@ def EXECUTE(db_system:System,query:str):
         INSERT(db_system,parser)
     elif option=="DELETE":
         DELETE(db_system,parser)
+    end_time = time.time()
+    print("Execution time:", end_time - start_time, "seconds")
     return
 
 def UPDATE(db_system:System,update_parser:UPDATE_tree_Evaluator):
@@ -1298,7 +1304,11 @@ def SELECT(db_system:System,select_parser:new_SELECT_tree_Evaluator):
 
     return temp_data_table
 
-
+def load_database(database_name) -> System:
+    database_file_path = os.path.join("data",database_name)
+    with open(database_file_path, 'rb') as f:
+        db_system = pickle.load(f)
+    return db_system
 if __name__=='__main__':
     #test_query="SELECT age FROM name_age INNER JOIN name_age ON name_age1.name=name_age2.name;"
     #test_query="CREATE TABLE customers (id INT PRIMARY KEY,name VARCHAR(50) NOT NULL,age INT PRIMARY KEY,email VARCHAR(100) NOT NULL);"
@@ -1596,46 +1606,97 @@ if __name__=='__main__':
 
 
 
-    print("+++++++++++++++++++++++++++")
-    test_system = System()
-    print(test_system.open_database('CUSTOMERS'))
-    delete_query="DELETE FROM customer_name WHERE id < 1;"
-    EXECUTE(test_system,delete_query)
+    # print("+++++++++++++++++++++++++++")
+    # test_system = System()
+    # print(test_system.open_database('CUSTOMERS'))
+    # delete_query="DELETE FROM customer_name WHERE id < 1;"
+    # EXECUTE(test_system,delete_query)
+    # print(test_system.database_tables)
+    # print("+++++++++++++++++++++++++++")
+    # update_query="UPDATE customer_name SET id = 5 WHERE id = 1;"
+    # EXECUTE(test_system,update_query)
+    # print(test_system.database_tables)
+    # drop_query="DROP TABLE customer_name;"
+    # EXECUTE(test_system,drop_query)
+    # print(test_system.database_tables)
+    # insert_query="INSERT INTO customer_name (id,customer_name) VALUES (4,'selina');"
+    # EXECUTE(test_system,insert_query)
+    # print(test_system.database_tables)
+    # select_query_1 = 'SELECT customer_name.customer_name, orders.id FROM orders INNER JOIN customer_name ON orders.customer_id = customer_name.id;'
+    # print(EXECUTE(test_system,select_query_1))
+    # print(test_system.database_tables)
+    # select_query_2 = 'SELECT customer_id, id FROM orders WHERE customer_id > 1 ORDER BY id DESC;'
+    # print(EXECUTE(test_system,select_query_2))
+    # select_query_3 = 'SELECT COUNT(customer_id) FROM orders WHERE customer_id > 1;'
+    # print(EXECUTE(test_system,select_query_3))
+    # select_query_4 = 'SELECT MAX(customer_id),id FROM orders WHERE customer_id > 1 GROUP BY id ORDER BY id DESC;'
+    # print(EXECUTE(test_system,select_query_4))
+    # drop_query="DROP TABLE orders;"
+    # EXECUTE(test_system,drop_query)
+    # # create_query = "CREATE TABLE orders (id INT PRIMARY KEY, customer_id INT);"
+
+    # # EXECUTE(test_system,create_query)
+    # print(test_system.database_tables)
+    # create_query = 'CREATE TABLE orders (id INT PRIMARY KEY, customer_id INT, FOREIGN KEY (customer_id) REFERENCES customer_name(id));'
+    # EXECUTE(test_system,create_query)
+    # print(test_system.database_tables)
+    # insert_query="INSERT INTO orders (id,customer_id) VALUES (4,1);"
+    # EXECUTE(test_system,insert_query)
+    # print(test_system.database_tables)
+    # insert_query="INSERT INTO orders (id,customer_id) VALUES (4,5);"
+    # EXECUTE(test_system,insert_query)
+    # print(test_system.database_tables)
+    
+    # test_system = System()
+    # test_system.init_database("TEST")
+    # create_query  = "CREATE TABLE customer_name (id INT PRIMARY KEY, customer_name VARCHAR(10));"
+    
+    # EXECUTE(test_system,create_query)
+    # create_query = 'CREATE TABLE orders (id INT PRIMARY KEY, customer_id INT, FOREIGN KEY (customer_id) REFERENCES customer_name(id));'
+
+    # EXECUTE(test_system,create_query)
+    # print(test_system.database_tables)
+    # test_system.save_database()
+    test_system = load_database("TEST")
+    # print(test_system.database_tables)
+
+    # insert_query = "INSERT INTO customer_name (id, customer_name) VALUES (1, 'suzy');"
+    # insert_query_1 = "INSERT INTO customer_name (id, customer_name) VALUES (0, 'yuni');"
+    # insert_query_2 = "INSERT INTO customer_name (id, customer_name) VALUES (2, 'Selina');"
+    # insert_query_3 = "INSERT INTO customer_name (id, customer_name) VALUES (3, 'Chelsea');"
+
+
+    # insert_query = "INSERT INTO orders (id, customer_id) VALUES (100, 2);"
+    # insert_query_1 = "INSERT INTO orders (id, customer_id) VALUES (200, 2);"
+    # insert_query_2 = "INSERT INTO orders (id, customer_id) VALUES (300, 2);"
+    # insert_query_3 = "INSERT INTO orders (id, customer_id) VALUES (310, 3);"
+    # insert_query_4 = "INSERT INTO orders (id, customer_id) VALUES (210, 0);"
+    # insert_query_5 = "INSERT INTO orders (id, customer_id) VALUES (290, 1);"
+
+
+
+
+
+
+    # EXECUTE(test_system,insert_query)
+    # EXECUTE(test_system,insert_query_1)
+    # EXECUTE(test_system,insert_query_2)
+    # EXECUTE(test_system,insert_query_3)
+    # EXECUTE(test_system,insert_query_5)
+
+
     print(test_system.database_tables)
-    print("+++++++++++++++++++++++++++")
-    update_query="UPDATE customer_name SET id = 5 WHERE id = 1;"
-    EXECUTE(test_system,update_query)
-    print(test_system.database_tables)
-    drop_query="DROP TABLE customer_name;"
-    EXECUTE(test_system,drop_query)
-    print(test_system.database_tables)
-    insert_query="INSERT INTO customer_name (id,customer_name) VALUES (4,'selina');"
-    EXECUTE(test_system,insert_query)
-    print(test_system.database_tables)
+
     select_query_1 = 'SELECT customer_name.customer_name, orders.id FROM orders INNER JOIN customer_name ON orders.customer_id = customer_name.id;'
     print(EXECUTE(test_system,select_query_1))
-    print(test_system.database_tables)
     select_query_2 = 'SELECT customer_id, id FROM orders WHERE customer_id > 1 ORDER BY id DESC;'
     print(EXECUTE(test_system,select_query_2))
     select_query_3 = 'SELECT COUNT(customer_id) FROM orders WHERE customer_id > 1;'
     print(EXECUTE(test_system,select_query_3))
     select_query_4 = 'SELECT MAX(customer_id),id FROM orders WHERE customer_id > 1 GROUP BY id ORDER BY id DESC;'
     print(EXECUTE(test_system,select_query_4))
-    drop_query="DROP TABLE orders;"
-    EXECUTE(test_system,drop_query)
-    # create_query = "CREATE TABLE orders (id INT PRIMARY KEY, customer_id INT);"
 
-    # EXECUTE(test_system,create_query)
-    print(test_system.database_tables)
-    create_query = 'CREATE TABLE orders (id INT PRIMARY KEY, customer_id INT, FOREIGN KEY (customer_id) REFERENCES customer_name(id));'
-    EXECUTE(test_system,create_query)
-    print(test_system.database_tables)
-    insert_query="INSERT INTO orders (id,customer_id) VALUES (4,1);"
-    EXECUTE(test_system,insert_query)
-    print(test_system.database_tables)
-    insert_query="INSERT INTO orders (id,customer_id) VALUES (4,5);"
-    EXECUTE(test_system,insert_query)
-    print(test_system.database_tables)
+    test_system.save_database()
 
 
 

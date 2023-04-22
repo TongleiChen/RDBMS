@@ -1,0 +1,6 @@
+1. CONJUNCTIVE and DISJUNCTIVE:
+    chatgpt say selectivity, min, max, distinct number???
+    好像有点道理又好像有点没道理???
+
+2. apply Sort-Merge Join:
+    see pseudocode in slides

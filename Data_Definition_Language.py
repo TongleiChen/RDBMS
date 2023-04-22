@@ -30,6 +30,21 @@ class System:
         # table_0:{"table_1":[table_1_name],"col_0":[col_name_0],"col_1":[col_name_1]}
         # table_1:{"table_0":[table_0_name],"col_0":[col_name_0],"col_1":[col_name_1]}
 
+    def save_database(self):
+        database_file_path = os.path.join("data",self.database_name)
+        with open(database_file_path, 'wb') as f:
+            pickle.dump(self, f)
+    
+    def init_database(self,database_name):
+        database_file_path = os.path.join("data",database_name)
+        if not os.path.exists(database_file_path):
+            self.database_name = database_name
+        else:
+            print(database_name,"already exists.")
+        return
+
+
+    
 
     def Create_Database(self,database_name):
         # YUNI: 0408 Tested
