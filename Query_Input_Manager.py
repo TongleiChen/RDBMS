@@ -12,6 +12,10 @@ import pickle
 import warnings
 warnings.filterwarnings("ignore")
 
+CHECKPOINT_QUERY_NUM = 3
+
+
+
 # start: database for testing
 # datatables = {
 # 	"people": {
@@ -78,7 +82,7 @@ SELECT_SQL_Grammar = """
     NAME: CNAME+
     NUMBER: SIGNED_NUMBER+
 
-    ALL: "*"
+    ALL: "*"i
     AND: "AND"i
     OR: "OR"i
     ASC: "ASC"i
@@ -104,8 +108,10 @@ SELECT_SQL_Grammar = """
 
     select_statement: SELECT selection from_clause options*
 
-    selection: ALL
+    selection: all
         | num_word_commalist
+
+    all: ALL
 
     num_word_commalist: [max_min] num_word
         | num_word_commalist COMMA [max_min] num_word
@@ -123,8 +129,10 @@ SELECT_SQL_Grammar = """
     
     item: QUOTE char_num QUOTE
 
-    options: where_clause* groupby_clause* order_by_clause*
-            | theta_join_clause* where_clause* order_by_clause*
+    options: where_clause* groupby_clause* order_by_clause* limit_clause*
+            | theta_join_clause* where_clause* order_by_clause* limit_clause*
+    
+    limit_clause: "LIMIT" char_num
 
     from_clause: FROM column_table_commalist
 
@@ -796,7 +804,9 @@ class new_SELECT_tree_Evaluator:
                      "order_by_clause":[],
                      "group_having_clause":[],
                      "theta_join_clause":[],
-                     "group_having_clause":[]}
+                     "group_having_clause":[],
+                     "limit_clause":[]}
+        #self.limit=[]
     def get_result(self):
         tree=self.parser.parse(self.query)
         # print(tree.pretty())
@@ -805,6 +815,7 @@ class new_SELECT_tree_Evaluator:
         # print("selection clause: ",self.selection_clause)
         # print("from clause: ",self.from_clause)
         # print("options: ",self.option)
+        # print("limit clause",self.limit)
         ...
         return self.result    
     def eval_tree(self,tree):
@@ -817,7 +828,7 @@ class new_SELECT_tree_Evaluator:
                 self.eval_tree(tree.children[3])
         elif tree.data=="selection":
             self.eval_tree(tree.children[0])
-        elif tree.data=="ALL":
+        elif tree.data=="all":
             self.selection_clause["all_flag"][0]=True
         elif tree.data=="num_word_commalist": 
             if len(tree.children)>=3: # num_word_commalist COMMA [max_min] num_word
@@ -868,6 +879,9 @@ class new_SELECT_tree_Evaluator:
         elif tree.data=="options":
             for child in tree.children:
                 self.eval_tree(child)
+        elif tree.data=="limit_clause":
+            # "LIMIT" char_num
+            self.option["limit_clause"].append(int(tree.children[0].children[0].value))
         elif tree.data=="where_clause":
             self.eval_tree(tree.children[1]) # search condition
         elif tree.data=="search_condition": # 只在where clause中出现
@@ -1242,18 +1256,19 @@ def SELECT(db_system:System,select_parser:new_SELECT_tree_Evaluator):
     selection_clause = select_parser.selection_clause
     from_clause = select_parser.from_clause[0] # one table 
     option = select_parser.option
-    select_all_flag = selection_clause['all_flag']
-
+    select_all_flag = selection_clause['all_flag'][0]
     if select_all_flag == True:
         select_columns = list(db_system.database_tables[from_clause].keys())
+        select_agg = [None for i in range(len(select_columns))]
     else:
         select_columns = selection_clause['cols']
     select_tables = selection_clause['tables']
-    select_agg = selection_clause['agg_fun']
+    
     where_clause = option['where_clause']
     order_by_clause = option['order_by_clause']
     group_by_clause = option['group_having_clause']
     theta_join_clause = option['theta_join_clause']
+    limit_clause = option['limit_clause']
 
     if len(theta_join_clause) != 0:
         # SIMPLE INNER JOIN
@@ -1264,7 +1279,6 @@ def SELECT(db_system:System,select_parser:new_SELECT_tree_Evaluator):
                 projection_cols_1.append(col)
             else:
                 projection_cols_2.append(col)
-        print("HERE")
         
         join_table = db_system.nested_loop_join(table_1=from_clause,
                                 table_1_col=theta_join_clause[2],
@@ -1273,7 +1287,8 @@ def SELECT(db_system:System,select_parser:new_SELECT_tree_Evaluator):
                                 projection_cols_1=projection_cols_1,
                                 projection_cols_2=projection_cols_2
                                 )
-        return join_table
+        
+        return db_system.limit(join_table,limit_clause)
     temp_data_table = db_system.database_tables[from_clause]
     if len(where_clause) != 0:
         # apply where
@@ -1291,7 +1306,7 @@ def SELECT(db_system:System,select_parser:new_SELECT_tree_Evaluator):
             temp_data_table = db_system.order_by(table_data = temp_data_table,
                                             order_cols = [order_by_clause[0]],
                                             sort = order_by_clause[1])
-        return temp_data_table
+        return db_system.limit(temp_data_table,limit_clause)
     if len(order_by_clause) != 0:
         temp_data_table = db_system.order_by(table_data = temp_data_table,
                                             order_cols = [order_by_clause[0]],
@@ -1302,7 +1317,7 @@ def SELECT(db_system:System,select_parser:new_SELECT_tree_Evaluator):
                     agg_fun = select_agg
                     )
 
-    return temp_data_table
+    return db_system.limit(temp_data_table,limit_clause)
 
 def load_database(database_name) -> System:
     database_file_path = os.path.join("data",database_name)
@@ -1357,6 +1372,7 @@ def recover(db_system:System):
 
 
 def DISPLAY_SQL_RESULTS(res):
+    print("****",res)
     table = BeautifulTable()
     table.column_headers = list(res.keys())
     for i in range(len(res[list(res.keys())[0]])):
@@ -1465,7 +1481,7 @@ if __name__=='__main__':
             else:
                 save_query(test_system,sql)
                 query_num += 1
-                if query_num == 10:
+                if query_num == CHECKPOINT_QUERY_NUM:
                     query_num = 0 
                     test_system.save_database()
                     checkpoint(test_system)

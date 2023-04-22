@@ -1147,7 +1147,16 @@ class System:
             
         # TODO: using index
             
-
+    def limit(self,data_table:dict,limit_clause:list):
+        if len(limit_clause) == 0:
+            return data_table
+        limit_num = limit_clause[0]
+        limit_table = {}
+        for col in data_table.keys():
+            limit_table[col] = data_table[col][:limit_num]
+        return limit_table
+    
+        
     def projection(self,data_table:dict,cols:list,agg_fun:list):
         # YUNI 0419 TESTED
         # YUNI 0420 EDITED

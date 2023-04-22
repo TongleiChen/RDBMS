@@ -1,1 +1,24 @@
 <CHECKPOINT>
+UPDATE customer_name SET id = 5 WHERE id = 6;
+<CHECKPOINT>
+UPDATE customer_name SET id = 5 WHERE id = 1;
+<CHECKPOINT>
+UPDATE customer_name SET id = 5 WHERE id = 1;
+UPDATE orders SET customer_id = 1 WHERE customer_id = 2;
+UPDATE orders SET customer_id = 2 WHERE id = 100;
+<CHECKPOINT>
+<CHECKPOINT>
+INSERT INTO customer_name (id, customer_name) VALUES (4,'Lesley');
+<CHECKPOINT>
+INSERT INTO customer_name (id, customer_name) VALUES (4,'Lesley');
+<CHECKPOINT>
+<CHECKPOINT>
+INSERT INTO orders (id, customer_id) VALUES (240,4);
+INSERT INTO orders (id, customer_id) VALUES (230,5);
+INSERT INTO orders (id, customer_id) VALUES (230,0);
+<CHECKPOINT>
+INSERT INTO orders (id, customer_id) VALUES (230,0);
+<CHECKPOINT>
+<CHECKPOINT>
+<CHECKPOINT>
+<CHECKPOINT>
