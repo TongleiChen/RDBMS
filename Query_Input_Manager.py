@@ -385,9 +385,9 @@ class CREATE_INDEX_tree_Evaluator:
         tree=self.parser.parse(self.query)
         self.eval_tree(tree)
         # TODO to get results
-        print("index name: ",self.index_name)
-        print("table name: ",self.table_name)
-        print("column name: ",self.column_name)
+        # print("index name: ",self.index_name)
+        # print("table name: ",self.table_name)
+        # print("column name: ",self.column_name)
         ...
         return self.result
     def eval_tree(self,tree):
@@ -411,7 +411,7 @@ class SELECT_tree_Evaluator:
     def get_result(self,datatable):
         self.datatable = datatable
         tree=self.parser.parse(self.query)
-        print(tree.pretty())
+        # print(tree.pretty())
         self.eval_tree(tree)
         return self.result
 
@@ -802,9 +802,9 @@ class new_SELECT_tree_Evaluator:
         # print(tree.pretty())
         self.eval_tree(tree)
         # TODO to get results
-        print("selection clause: ",self.selection_clause)
-        print("from clause: ",self.from_clause)
-        print("options: ",self.option)
+        # print("selection clause: ",self.selection_clause)
+        # print("from clause: ",self.from_clause)
+        # print("options: ",self.option)
         ...
         return self.result    
     def eval_tree(self,tree):
@@ -961,9 +961,9 @@ class UPDATE_tree_Evaluator:
         tree=self.parser.parse(self.query)
         self.eval_tree(tree)
         # TODO to get results
-        print("table to be updated: ",self.table_name)
-        print("update clause: ",self.update_clause)
-        print("where clause: ",self.where_clause)
+        # print("table to be updated: ",self.table_name)
+        # print("update clause: ",self.update_clause)
+        # print("where clause: ",self.where_clause)
         ...
         return self.result
     
@@ -1008,7 +1008,7 @@ class DROP_TABLE_tree_Evaluator:
         tree=self.parser.parse(self.query)
         self.eval_tree(tree)
         # TODO to get results
-        print("table to be dropped: ",self.table_name)
+        # print("table to be dropped: ",self.table_name)
         ...
         return self.result
     
@@ -1035,9 +1035,9 @@ class INSERT_tree_Evaluator:
         tree=self.parser.parse(self.query)
         self.eval_tree(tree)
         # TODO to get results
-        print("table to be inserted: ",self.table_name)
-        print("insert columns: ",self.insert_cols)
-        print("insert valuse: ",self.insert_vals)
+        # print("table to be inserted: ",self.table_name)
+        # print("insert columns: ",self.insert_cols)
+        # print("insert valuse: ",self.insert_vals)
         
         return self.result
     
@@ -1079,9 +1079,9 @@ class DELETE_tree_Evaluator:
         tree=self.parser.parse(self.query)
         self.eval_tree(tree)
         # TODO to get results
-        print("table to be delete: ",self.table_name)
-        print("where clause: ",self.where_clause)
-        print("cascade flag: ",self.cascade_flag)
+        # print("table to be delete: ",self.table_name)
+        # print("where clause: ",self.where_clause)
+        # print("cascade flag: ",self.cascade_flag)
         
 
         ...
@@ -1120,8 +1120,8 @@ class CREATE_TABLE_tree_Evaluator:
         tree=self.parser.parse(self.query)
         self.eval_tree(tree)
         # TODO to get results
-        print("table to be delete: ",self.table_name)
-        print("attributes clause: ",self.attributes_clause)
+        # print("table to be delete: ",self.table_name)
+        # print("attributes clause: ",self.attributes_clause)
         ...
         return self.result
     def eval_tree(self,tree):
@@ -1227,7 +1227,6 @@ def DELETE(db_system:System,delete_parser:DELETE_tree_Evaluator):
 
     return
 
-
 def DROP(db_system:System,drop_parser:DROP_TABLE_tree_Evaluator):
     drop_parser.get_result()
     db_system.drop_table_dict(drop_parser.table_name)
@@ -1237,7 +1236,6 @@ def DROP(db_system:System,drop_parser:DROP_TABLE_tree_Evaluator):
 def CREATE(db_system:System,create_parser:CREATE_TABLE_tree_Evaluator):
     create_parser.get_result()
     db_system.create_table_dict(create_parser.table_name,create_parser.attributes_clause)
-
 
 def SELECT(db_system:System,select_parser:new_SELECT_tree_Evaluator):
     select_parser.get_result()
@@ -1365,7 +1363,7 @@ def examples(option):
 	# DROP TABLE
 	elif option == 6:
 		sql_statement = "DROP TABLE customers;"
-        
+
 
 if __name__=='__main__':
     #test_query="SELECT age FROM name_age INNER JOIN name_age ON name_age1.name=name_age2.name;"
@@ -1381,32 +1379,35 @@ if __name__=='__main__':
     # EVALUATOR=GET_EVALUATOR_from_Query(test_query)
     # print(EVALUATOR.get_result())
     test_system = load_database("TEST")
-    code = input('Tell Me Your Option: \n Type \'SQL\' to create own query \n Type \'EXAMPLE\' to use some given example queries: \n')
-    if code == "sql" or code == "SQL":
-        sql = input('Please Input >>> ')
-        # EVALUATOR=GET_EVALUATOR_from_Query(sql)
-        res = EXECUTE(db_system=test_system,query=sql)
-        if res != None:
-            DISPLAY_SQL_RESULTS(res)
-		# execution: get result dict
+    while(1):
+        code = input('Tell Me Your Option: \n Type \'SQL\' to create own query \n Type \'EXAMPLE\' to use some given example queries \n Type \'EXIT\' to quit: \n')
+        if code == "sql" or code == "SQL":
+            sql = input('Please Input >>> ')
+            # EVALUATOR=GET_EVALUATOR_from_Query(sql)
+            res = EXECUTE(db_system=test_system,query=sql)
+            if res != None:
+                DISPLAY_SQL_RESULTS(res)
+            # execution: get result dict
 
-        
-    elif code == "example" or code=="EXAMPLE":
-        example = input('Choose from given example by typing a name below: \n \t CREATE TABLE \n \t SELECT \n \t UPDATE \n \t INSERT \n \t DELETE \n \t DROP TABLE \n >')
-        if example == "CREATE TABLE":
-            examples(1)
-        elif example == "SELECT":
-            examples(2)
-        elif example == "UPDATE":
-            examples(3)
-        elif example == "INSERT":
-            examples(4)
-        elif example == "DELETE":
-            examples(5)
-        elif example == "DROP TABLE":
-            examples(6)
-        else:
-            raise ValueError(f"Invalid syntax query")
+        elif code=="exit" or code=="EXIT":
+            break
+            
+        elif code == "example" or code=="EXAMPLE":
+            example = input('Choose from given example by typing a name below: \n \t CREATE TABLE \n \t SELECT \n \t UPDATE \n \t INSERT \n \t DELETE \n \t DROP TABLE \n >')
+            if example == "CREATE TABLE":
+                examples(1)
+            elif example == "SELECT":
+                examples(2)
+            elif example == "UPDATE":
+                examples(3)
+            elif example == "INSERT":
+                examples(4)
+            elif example == "DELETE":
+                examples(5)
+            elif example == "DROP TABLE":
+                examples(6)
+            else:
+                raise ValueError(f"Invalid syntax query")
 
     # # 1. select grammar
     # # 0410 tested

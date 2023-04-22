@@ -40,6 +40,13 @@ options:    where_clause: WHERE condition1 (AND/OR condition2)| age BETWEEN 2 AN
 5. Create index的grammar
 
 
+主键的selectivity最低
 
-
-
+selectivity高就是likely to be True
+if operator=="=":
+    对于AND: 把likely to be false 的条件放在前面 ->  selectivity低
+    对于 OR: 把likely to be True 的条件放在前面 ->  selectivity高
+elif operator=="!=": 
+    对于AND: 把likely to be True 的条件放在前面 ->  selectivity
+    对于 OR: 把likely to be True 的条件放在前面 ->  selectivity低
+    
