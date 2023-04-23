@@ -9,6 +9,10 @@ import pickle
 
 # YUNI: 一边骂别人不写注释一边自己不写注释的我本人
 
+
+class SystemError(Exception):
+    pass
+
 class System:
     # Maintain two “tables”: TABLES & COLUMNS
     # the system can only contain one database
@@ -188,8 +192,7 @@ class System:
 
         # YUNI: 0415 TESTED
         if relation_name in self.table_path:
-            print("CREATE ERROR: Table already exists.")
-            return
+            raise SystemError("CREATE ERROR: Table already exists.")
             
         current_table_path = os.path.join(self.database_name,relation_name+'.csv')
         col_names = attribute['names']
@@ -224,7 +227,7 @@ class System:
                 col_1_name = self.find_primary_key(references)[0]
                 if col_1_name != reference_col:
                     # TODO: raise error
-                    print("FOREIGN KEY ERROR: Reference column is not a primary key. ")
+                    raise SystemError("FOREIGN KEY ERROR: Reference column is not a primary key. ")
                 if relation_name not in self.foreign_key['foreign_key_0']:
                     self.foreign_key['foreign_key_0'][relation_name] = {"table_1":[references],
                                                         "col_0":[col_0_name],
@@ -283,8 +286,7 @@ class System:
         # YUNI: 0420 check foreign key
         # YUNI: 0420 single foreign key TESTED
         if relation_name in self.foreign_key['foreign_key_1']:
-            print("DROP ERROR: Violate the foreign key constraint. ")
-            return
+            raise SystemError("DROP ERROR: Violate the foreign key constraint. ")
         
         if relation_name in self.foreign_key['foreign_key_0']:
             drop_constraint = self.foreign_key['foreign_key_0'].pop(relation_name)
@@ -306,8 +308,7 @@ class System:
             
 
         if relation_name not in self.table_path:
-            print("DROP ERROR: Table does not exist.")
-            return
+            raise SystemError("DROP ERROR: Table does not exist.")
         del self.table_path[relation_name]
         del self.table_attributes[relation_name]
         del self.database_tables[relation_name]
@@ -399,8 +400,7 @@ class System:
                     try_insert_list.append(insert_vals[i])
                 inserted_primary_key.append(try_insert_list)
         if self.check_duplicates(inserted_primary_key) == True:
-            print("Insertion ERROR: There exists DUPLICATES. ")
-            return
+            raise SystemError("Insertion ERROR: There exists DUPLICATES. ")
         # TODO: insert_col not null check?
         
         if relation_name in self.foreign_key['foreign_key_0']:
@@ -420,8 +420,7 @@ class System:
                 print(self.database_tables[table_1][col_1])
                 print(col_0_val not in self.database_tables[table_1][col_1])
                 if col_0_val not in self.database_tables[table_1][col_1]:
-                    print("INSERT ERROR: Violate the foreign key constraints. ")
-                    return
+                    raise SystemError("INSERT ERROR: Violate the foreign key constraints. ")
                 
 
                 
@@ -532,7 +531,7 @@ class System:
                 for delete_i in delete_row_list:
                     col_1_val = self.database_tables[relation_name][col_1][delete_i]
                     if col_1_val in self.database_tables[table_0][col_0]:
-                        print("DELETE ERROR: Violate foreign key constraints.")
+                        raise SystemError("DELETE ERROR: Violate foreign key constraints.")
                         return
         
 
@@ -670,8 +669,7 @@ class System:
                     try_update_list[row_idx] = update_dict['vals'][check_i]
                 primary_update_list.append(try_update_list)
         if self.check_duplicates(primary_update_list) == True:
-            print("Insertion ERROR: There exists DUPLICATES. ")
-            return
+            raise SystemError("Insertion ERROR: There exists DUPLICATES. ")
             
         # check constraints! 
         if relation_name in self.foreign_key['foreign_key_0']:
@@ -695,16 +693,13 @@ class System:
                         table_1 = table_1_list[col_0_idx]
                         # print("&&&&&&&",col_0_val)
                         if col_0_val not in self.database_tables[table_1][col_1]:
-                            print("INSERT ERROR: Violate the foreign key constraints. ")
-                            return
+                            raise SystemError("INSERT ERROR: Violate the foreign key constraints. ")
         if relation_name in self.foreign_key['foreign_key_1']:
-            print("&&&&","HERE")
 
             table_0_list = self.foreign_key['foreign_key_1'][relation_name]['table_0']
             col_0_list = self.foreign_key['foreign_key_1'][relation_name]['col_0']
             col_1_list = self.foreign_key['foreign_key_1'][relation_name]['col_1'] # primary key TODO: index?
             for u_idx,updating_col in enumerate(update_dict['cols']):
-                print("&&&&","HERE")
 
                 for col_1_idx,col_1 in enumerate(col_1_list):
                     if updating_col == col_1:
@@ -712,10 +707,8 @@ class System:
                             col_1_val = self.database_tables[relation_name][updating_col][update_idx]
                             col_0 = col_0_list[col_1_idx]
                             table_0 = table_0_list[col_1_idx]
-                            print("****",col_1_val)
                             if col_1_val in self.database_tables[table_0][col_0]:
-                                print("DELETE ERROR: Violate the foreign key constraints. ")
-                                return
+                                raise SystemError("DELETE ERROR: Violate the foreign key constraints. ")
 
 
 
@@ -1170,14 +1163,12 @@ class System:
             if c_agg != None: # have agg_fun
                 if agg_flag == False:
                     # TODO: raise error
-                    print("PROJECTION ERROR: In aggregated query without GROUP BY, SELECT list contains nonaggregated column. ")
-                    return
+                    raise SystemError("PROJECTION ERROR: In aggregated query without GROUP BY, SELECT list contains nonaggregated column. ")
                 agg_flag = True
             else: # dont have agg_fun (if c_agg == None)
                 if agg_flag == True:
                     # TODO: raise error
-                    print("PROJECTION ERROR: In aggregated query without GROUP BY, SELECT list contains nonaggregated column. ")
-                    return
+                    raise SystemError("PROJECTION ERROR: In aggregated query without GROUP BY, SELECT list contains nonaggregated column. ")
                 agg_flag = False
         if agg_flag == False:
             for col in cols:
@@ -1289,9 +1280,7 @@ class System:
                     group_by_val = having_condition[0][2]
                 if group_by_col != group_column:
                     # TODO: raise error
-                    print(group_by_col,group_column)
-                    print("GROUP BY ERROR: Unknown column in having clause. ")
-                    return
+                    raise SystemError("GROUP BY ERROR: Unknown column in having clause. ")
                 for val in group_value:
                     if op == ">":
                         if val > group_by_val:
@@ -1331,8 +1320,7 @@ class System:
         for col_idx,proj_col in enumerate(table_cols):
             if (proj_col not in group_columns) and (agg_func[col_idx] == None):
                 # TODO: raise error
-                print("GROUP BY ERROR: SELECT list is not in GROUP BY clause and contains nonaggregated column.")
-                return
+                raise SystemError("GROUP BY ERROR: SELECT list is not in GROUP BY clause and contains nonaggregated column.")
             else:
                 proj_table[proj_col] = []
         for val in group_dict.keys():
