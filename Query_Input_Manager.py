@@ -10,7 +10,10 @@ import time
 import os
 import pickle
 import warnings
+import sys
+sys.setrecursionlimit(100000)
 warnings.filterwarnings("ignore")
+
 
 CHECKPOINT_QUERY_NUM = 10
 
@@ -835,7 +838,7 @@ def EXECUTE(db_system:System,query:str):
     elif option=="DELETE":
         DELETE(db_system,parser)
     end_time = time.time()
-    print("Execution time:", end_time - start_time, "seconds")
+    # print("Execution time:", end_time - start_time, "seconds")
     return
 
 def UPDATE(db_system:System,update_parser:UPDATE_tree_Evaluator):
@@ -879,9 +882,11 @@ def SELECT(db_system:System,select_parser:new_SELECT_tree_Evaluator):
         select_agg = [None for i in range(len(select_columns))]
     else:
         select_columns = selection_clause['cols']
+        select_agg = selection_clause['agg_fun']
     select_tables = selection_clause['tables']
     
     where_clause = option['where_clause']
+    print(where_clause)
     order_by_clause = option['order_by_clause']
     group_by_clause = option['group_having_clause']
     theta_join_clause = option['theta_join_clause']
@@ -942,7 +947,11 @@ def load_database(database_name) -> System:
         db_system = pickle.load(f)
     return db_system
 def save_query(db_system:System,query:str):
+    
     database_file_path = os.path.join("query",db_system.database_name+".txt")
+    if not os.path.isfile(database_file_path):
+        f = open(database_file_path, "w")
+        f.close()
     with open(database_file_path, "r+") as f:
         f.seek(0, 2)
         f.write(query+"\n")
@@ -956,6 +965,9 @@ def checkpoint(db_system:System):
 
 def read_query(db_system:System):
     database_file_path = os.path.join("query",db_system.database_name+".txt")
+    if not os.path.isfile(database_file_path):
+        f = open(database_file_path, "w")
+        f.close()
     with open(database_file_path, 'rb') as f:
         try:  # catch OSError in case of a one line file 
             f.seek(-2, os.SEEK_END)
@@ -1044,6 +1056,56 @@ def examples(option):
 		sql_statement = "DROP TABLE customers;"
 
 
+def demo_data():
+    sql_list = []
+    # sql="CREATE TABLE Rel1 (index INT PRIMARY KEY, value INT);"
+    # sql_list.append(sql)
+    # sql2="CREATE TABLE Rel2 (index INT PRIMARY KEY, value INT);"
+    # sql_list.append(sql2)
+
+    # for i in range(1,1001):
+    #     i_i="("+str(i)+","+str(i)+");"
+    #     sql="INSERT INTO Rel1 (index, value) VALUES "+i_i
+    #     sql_list.append(sql)
+
+    #     i_1="("+str(i)+",1);"
+    #     sql="INSERT INTO Rel2 (index, value) VALUES "+i_1
+    #     sql_list.append(sql)
+
+    # sql="CREATE TABLE Rel3 (index INT PRIMARY KEY, value INT);"
+    # sql_list.append(sql)
+    # sql="CREATE TABLE Rel4 (index INT PRIMARY KEY, value INT);"
+    # sql_list.append(sql)
+
+
+    # for i in range(1,10001):
+    #     i_i="("+str(i)+","+str(i)+");"
+    #     sql="INSERT INTO Rel3 (index, value) VALUES "+i_i
+    #     sql_list.append(sql)
+
+
+    #     i_1="("+str(i)+",1);"
+    #     sql="INSERT INTO Rel4 (index, value) VALUES "+i_1
+    #     sql_list.append(sql)
+
+
+    sql="CREATE TABLE Rel5 (index INT PRIMARY KEY, value INT);"
+    sql_list.append(sql)
+    sql="CREATE TABLE Rel6 (index INT PRIMARY KEY, value INT);"
+    sql_list.append(sql)
+
+    for i in range(1,100001):
+        i_i="("+str(i)+","+str(i)+");"
+        sql="INSERT INTO Rel5 (index, value) VALUES "+i_i
+        sql_list.append(sql)
+
+        i_1="("+str(i)+",1);"
+        sql="INSERT INTO Rel6 (index, value) VALUES "+i_1
+        sql_list.append(sql)
+    
+    return sql_list
+
+
 if __name__=='__main__':
     #test_query="SELECT age FROM name_age INNER JOIN name_age ON name_age1.name=name_age2.name;"
     #test_query="CREATE TABLE customers (id INT PRIMARY KEY,name VARCHAR(50) NOT NULL,age INT PRIMARY KEY,email VARCHAR(100) NOT NULL);"
@@ -1057,9 +1119,18 @@ if __name__=='__main__':
     # test_query="DROP INDEX index_name;"
     # EVALUATOR=GET_EVALUATOR_from_Query(test_query)
     # print(EVALUATOR.get_result())
-    test_system = load_database("TEST")
+    # test_system = System()
+    # test_system.init_database("DEMO")
+    test_system = load_database("DEMO")
     recover(test_system)
     query_num = 0
+    
+    
+
+
+
+
+
     while True:
         print('Tell Me Your Option: \n create your own query \n Type \'EXAMPLE\' to use some given example queries \n Type \'EXIT\' to quit: \n')
         sql = input('Please Input >>> ')
@@ -1092,11 +1163,11 @@ if __name__=='__main__':
             if sql=="exit" or sql=="EXIT":
                 break
             # EVALUATOR=GET_EVALUATOR_from_Query(sql)
-            try:
-                res = EXECUTE(db_system=test_system,query=sql)
-            except Exception as e:
-                print("{}: {}".format(type(e).__name__,e))
-                continue
+            # try:
+            res = EXECUTE(db_system=test_system,query=sql)
+            # except Exception as e:
+            #     print("{}: {}".format(type(e).__name__,e))
+            #     continue
             if res != None:
                 DISPLAY_SQL_RESULTS(res)
             else:
@@ -1106,7 +1177,59 @@ if __name__=='__main__':
                     query_num = 0 
                     test_system.save_database()
                     checkpoint(test_system)
-                    
+
+    # sql_list = demo_data()
+    # sql_list.append("exit")
+    # start_time = time.time()
+    # for sql in sql_list:
+        # print('Tell Me Your Option: \n create your own query \n Type \'EXAMPLE\' to use some given example queries \n Type \'EXIT\' to quit: \n')
+        # sql = input('Please Input >>> ')
+
+            # execution: get result dict
+
+    
+    #     if sql == "example" or sql=="EXAMPLE":
+    #         example = input('Choose from given example by typing a name below: \n \t CREATE TABLE \n \t SELECT \n \t UPDATE \n \t INSERT \n \t DELETE \n \t DROP TABLE \n >')
+    #         if example == "CREATE TABLE":
+    #             examples(1)
+    #         elif example == "SELECT":
+    #             examples(2)
+    #         elif example == "UPDATE":
+    #             examples(3)
+    #         elif example == "INSERT":
+    #             examples(4)
+    #         elif example == "DELETE":
+    #             examples(5)
+    #         elif example == "DROP TABLE":
+    #             examples(6)
+    #         else:
+    #             raise ValueError(f"Invalid syntax query")
+    #     elif sql=="exit" or sql=="EXIT":
+    #         test_system.save_database()
+    #         checkpoint(test_system)
+    #         break
+    #     else:
+            
+    #         if sql=="exit" or sql=="EXIT":
+    #             break
+    #         # EVALUATOR=GET_EVALUATOR_from_Query(sql)
+    #         try:
+    #             res = EXECUTE(db_system=test_system,query=sql)
+    #         except Exception as e:
+    #             print("{}: {}".format(type(e).__name__,e))
+    #             continue
+    #         if res != None:
+    #             DISPLAY_SQL_RESULTS(res)
+    #         else:
+    #             save_query(test_system,sql)
+    #             query_num += 1
+    #             if query_num == CHECKPOINT_QUERY_NUM:
+    #                 query_num = 0 
+    #                 test_system.save_database()
+    #                 checkpoint(test_system)
+    
+    # end_time = time.time()
+    # print("Execution time:", end_time - start_time, "seconds")
 
     # # 1. select grammar
     # # 0410 tested

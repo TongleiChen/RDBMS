@@ -119,10 +119,8 @@ class System:
                 else:
                     self.table_attributes[line_2[0]] = {line_2[1]:line_2[2:]}
 
-        print(self.table_attributes)
         # print(self.table_path)
         for table in self.table_path.keys():
-            print(table)
             self.database_tables[table] = self.get_data(table)
         # read index
         self.read_index()
@@ -215,6 +213,7 @@ class System:
                 self.table_attributes[relation_name][col_name_i].append("True")
             else:
                 self.table_attributes[relation_name][col_name_i].append("False")
+        self.create_index(relation_name,"default_name")
         if len(foreign_key_col) != 0:
             # TODO: check references
             # 0 --> 1
@@ -392,6 +391,64 @@ class System:
         inserted_primary_key = []
         for i,column in enumerate(insert_cols):
             if column in primary_key_list:
+                if self.table_attributes[relation_name][column][0] == 'INT':
+                    insert_vals[i] = int(insert_vals[i])
+                inserted_primary_key.append(insert_vals[i])
+        if self.check_duplicates(relation_name,inserted_primary_key) == True:
+            raise SystemError("Insertion ERROR: There exists DUPLICATES. ")
+        # TODO: insert_col not null check?
+        
+        if relation_name in self.foreign_key['foreign_key_0']:
+            table_1_list = self.foreign_key['foreign_key_0'][relation_name]['table_1']
+            col_0_list = self.foreign_key['foreign_key_0'][relation_name]['col_0']
+            col_1_list = self.foreign_key['foreign_key_0'][relation_name]['col_1'] # primary key TODO: index
+            for idx,table_1 in enumerate(table_1_list):
+                col_0 = col_0_list[idx]
+                col_1 = col_1_list[idx]
+                position = insert_cols.index(col_0)
+                col_0_val = insert_vals[position]
+                try:
+                    col_0_val = int(col_0_val)
+                except:
+                    col_0_val = insert_vals[position]
+                if col_0_val not in self.database_tables[table_1][col_1]:
+                    raise SystemError("INSERT ERROR: Violate the foreign key constraints. ")
+                
+
+                
+                
+
+        for i,column in enumerate(insert_cols):
+            if self.table_attributes[relation_name][column][0] == 'INT':
+
+                self.database_tables[relation_name][column].append(int(insert_vals[i]))
+            else:
+                self.database_tables[relation_name][column].append(insert_vals[i])
+
+
+        
+        # TODO: NEED TO BE TESTED 0417
+        if relation_name in self.table_index:
+            # add index for the inserted data
+            inserted_index_value = len(self.database_tables[relation_name][column])-1
+            primary_key = primary_key_list[0]
+            # print("*******",inserted_index_value)
+            inseted_index_key = self.database_tables[relation_name][primary_key][inserted_index_value]
+            self.table_index[relation_name].setdefault(inseted_index_key,inserted_index_value)
+            
+
+        
+        return
+
+    def insert_data_no_index(self,relation_name:str,insert_cols:list,insert_vals:list):
+
+
+        # check duplicates
+        # TODO: Check len(insert_col) 
+        primary_key_list = self.find_primary_key(relation_name)
+        inserted_primary_key = []
+        for i,column in enumerate(insert_cols):
+            if column in primary_key_list:
                 try_insert_list = copy.deepcopy(self.database_tables[relation_name][column])
                 if self.table_attributes[relation_name][column][0] == 'INT':
                     try_insert_list.append(int(insert_vals[i]))
@@ -449,6 +506,8 @@ class System:
         
         return
 
+
+
     def find_primary_key(self,relation_name):
         primary_key = []
 
@@ -457,7 +516,28 @@ class System:
                 primary_key.append(attr)
         return primary_key
     
-    def check_duplicates(self,primary_column_list):
+    def check_duplicates(self,relation_name:str,new_primary_num:list):
+        # return False -> no duplicates
+        # return True -> has duplicates
+        # if len(primary_column_list) == 1:
+        #     if len(primary_column_list[0]) == len(set(primary_column_list[0])):
+        #         return False
+        # else:
+        #     primary_key_pairs = list(zip(*primary_column_list))
+        #     if len(primary_key_pairs) == len(set(primary_key_pairs)):
+        #         return False
+        # print(self.table_index)
+        for num in new_primary_num:
+            if num in self.table_index[relation_name]:
+                return True
+        return False
+        
+
+
+
+
+
+    def check_duplicates_no_index(self,primary_column_list):
         # return False -> no duplicates
         # return True -> has duplicates
         if len(primary_column_list) == 1:
@@ -468,9 +548,6 @@ class System:
             if len(primary_key_pairs) == len(set(primary_key_pairs)):
                 return False
         return True
-        
-
-
     def delete_data_dict(self,relation_name:str, where_dict:dict):
         # YUNI: 0415 TESTED
         table_attri = self.get_column_list(relation_name)
@@ -658,6 +735,157 @@ class System:
             
             if match_flag == True:
                 update_row_list.append(i)
+        
+        primary_key_list = self.find_primary_key(relation_name)
+        primary_update_list = []
+        for check_i,column in enumerate(update_dict['cols']):
+            if column in primary_key_list:
+                primary_update_list.append(update_dict['vals'][check_i])
+        if self.check_duplicates(relation_name,primary_update_list) == True:
+            raise SystemError("Insertion ERROR: There exists DUPLICATES. ")
+            
+        # check constraints! 
+        if relation_name in self.foreign_key['foreign_key_0']:
+            # print("&&&&","HERE")
+            table_1_list = self.foreign_key['foreign_key_0'][relation_name]['table_1']
+            col_0_list = self.foreign_key['foreign_key_0'][relation_name]['col_0']
+            col_1_list = self.foreign_key['foreign_key_0'][relation_name]['col_1'] # primary key TODO: index?
+            for u_idx,updating_col in enumerate(update_dict['cols']):
+                for col_0_idx,col_0 in enumerate(col_0_list):
+                    if updating_col == col_0:
+                        # print("&&&&","HERE")
+                        
+
+                        try:
+                            col_0_val = int(update_dict['vals'][u_idx])
+
+                        except:
+                            col_0_val = update_dict['vals'][u_idx]
+
+                        col_1 = col_1_list[col_0_idx]
+                        table_1 = table_1_list[col_0_idx]
+                        # print("&&&&&&&",col_0_val)
+                        if col_0_val not in self.database_tables[table_1][col_1]:
+                            raise SystemError("INSERT ERROR: Violate the foreign key constraints. ")
+        if relation_name in self.foreign_key['foreign_key_1']:
+
+            table_0_list = self.foreign_key['foreign_key_1'][relation_name]['table_0']
+            col_0_list = self.foreign_key['foreign_key_1'][relation_name]['col_0']
+            col_1_list = self.foreign_key['foreign_key_1'][relation_name]['col_1'] # primary key TODO: index?
+            for u_idx,updating_col in enumerate(update_dict['cols']):
+
+                for col_1_idx,col_1 in enumerate(col_1_list):
+                    if updating_col == col_1:
+                        for update_idx in update_row_list:
+                            col_1_val = self.database_tables[relation_name][updating_col][update_idx]
+                            col_0 = col_0_list[col_1_idx]
+                            table_0 = table_0_list[col_1_idx]
+                            if col_1_val in self.database_tables[table_0][col_0]:
+                                raise SystemError("DELETE ERROR: Violate the foreign key constraints. ")
+
+
+
+
+
+        for update_idx in update_row_list:
+            for j,column in enumerate(update_dict['cols']):
+                origin_val = self.database_tables[relation_name][column][update_idx]
+                self.database_tables[relation_name][column][update_idx] = update_dict['vals'][j]
+
+
+                # TODO: NEED TO BE TESTED 0417
+                if (relation_name in self.table_index) and (column in primary_key_list):
+                    updated_row_num = self.table_index[relation_name].pop(origin_val) # should equal to j
+                    self.table_index[relation_name].setdefault(update_dict['vals'][j],updated_row_num)
+
+                
+        return
+        
+
+
+
+            
+        
+
+
+
+
+        # current_table_path = self.table_path[relation_name]
+        
+        # attribute_list = self.table_attributes[relation_name]
+        # data_list = []
+        # for attri in attribute_list:
+        #     data_list.append(data[attri[0]])
+        # updated_data = ",".join(map(str,data_list)) + '\n'
+        # new_data = []
+        # with open(current_table_path,"r") as f:
+        #     for pos,data_line in enumerate(f.readlines()):
+        #         # YUNI: 这里data_pos 是不包括标题那一行的第几行
+        #         if pos == data_pos + 1:
+        #             new_data.append(updated_data)
+        #             continue
+        #         else:
+        #             new_data.append(data_line)
+        # with open(current_table_path,"w") as f:
+        #     f.writelines(new_data)
+        # return
+
+
+
+
+
+    def update_data_no_index(self,relation_name,update_dict:dict,where_dict:dict):
+
+        # YUNI: unknown data TESTED
+        # Where only 1 condition
+
+        # database_table = self.get_data(relation_name)
+        table_attri = self.get_column_list(relation_name)
+
+        total_number_row = len(self.database_tables[relation_name][table_attri[0]])
+        
+        where_col = where_dict['cols'][0]
+
+        if self.table_attributes[relation_name][where_col][0] == 'INT':
+            where_val = int(where_dict['vals'][0])
+        else:
+            where_val = where_dict['vals'][0]
+
+        for col_idx,col in enumerate(update_dict['cols']):
+            if self.table_attributes[relation_name][col][0] == 'INT':
+                update_dict['vals'][col_idx] = int(update_dict['vals'][col_idx])
+        
+        where_op = where_dict['ops'][0]
+        # print("&&&",where_op)
+        update_row_list = []
+        for i in range(total_number_row):
+            match_flag = False
+            if where_op == "=":
+
+                if self.database_tables[relation_name][where_col][i] == where_val:
+                    # print("((((",self.database_tables[relation_name][where_col][i],where_val)
+                    match_flag = True
+
+            if where_op == ">":
+                if self.database_tables[relation_name][where_col][i] > where_val:
+                    match_flag = True
+
+
+            if where_op == ">=":
+                if self.database_tables[relation_name][where_col][i] >= where_val:
+                    match_flag = True
+
+
+            if where_op == "<":
+                if self.database_tables[relation_name][where_col][i] < where_val:
+                    match_flag = True
+
+            if where_op == "<=":
+                if self.database_tables[relation_name][where_col][i] <= where_val:
+                    match_flag = True
+            
+            if match_flag == True:
+                update_row_list.append(i)
         print("###",update_row_list)
         
         primary_key_list = self.find_primary_key(relation_name)
@@ -728,37 +956,6 @@ class System:
                     self.table_index[relation_name].setdefault(update_dict['vals'][j],updated_row_num)
 
                 
-        return
-        
-
-
-
-            
-        
-
-
-
-
-        # current_table_path = self.table_path[relation_name]
-        
-        # attribute_list = self.table_attributes[relation_name]
-        # data_list = []
-        # for attri in attribute_list:
-        #     data_list.append(data[attri[0]])
-        # updated_data = ",".join(map(str,data_list)) + '\n'
-        # new_data = []
-        # with open(current_table_path,"r") as f:
-        #     for pos,data_line in enumerate(f.readlines()):
-        #         # YUNI: 这里data_pos 是不包括标题那一行的第几行
-        #         if pos == data_pos + 1:
-        #             new_data.append(updated_data)
-        #             continue
-        #         else:
-        #             new_data.append(data_line)
-        # with open(current_table_path,"w") as f:
-        #     f.writelines(new_data)
-        # return
-
         return
     
     def get_data(self,relation_name):
@@ -908,7 +1105,6 @@ class System:
                     val = condition[2]
                 for r in range(row_num):
                     value_in_row = data_table[col][r]
-                    print(value_in_row)
                     if op == ">":
                         if value_in_row > val:
                             pass
@@ -997,7 +1193,7 @@ class System:
                 for s_t in selected_row_total:
                     for column in columns_list:
                         selected_table[column].append(data_table[column][s_t])
-                return selected_table
+                return selected_table,[]
     
 
 
@@ -1108,7 +1304,7 @@ class System:
 
                 data_table_output,_ = self.select_where(relation_name,[condition_1]) # meet with condition1 and meet with condition2
                 data_table_output_2,_ = self.select_where_from_output(data_table_output,[condition_2])
-                return data_table_output_2
+                return data_table_output_2,[]
             else: # operation == "OR": condition_1 = True
                  # IN condition_1 = False find condition_2 = True
                  # TODO: 
@@ -1132,7 +1328,7 @@ class System:
                 for s_t in selected_row_total:
                     for column in columns_list:
                         selected_table[column].append(self.database_tables[relation_name][column][s_t])
-                return selected_table
+                return selected_table,[]
 
             
 

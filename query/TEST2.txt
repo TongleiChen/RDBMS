@@ -1,0 +1,16 @@
+CREATE TABLE customer_name (id INT PRIMARY KEY, customer_name VARCHAR(10));
+CREATE TABLE orders (id INT PRIMARY KEY, customer_id INT, FOREIGN KEY (customer_id) REFERENCES customer_name(id));
+<CHECKPOINT>
+INSERT INTO customer_name (id, customer_name) VALUES (4,'Lesley');
+INSERT INTO orders (id, customer_id) VALUES (240,4);
+INSERT INTO customer_name (id,customer_name) VALUES (5,'Selina');
+INSERT INTO customer_name (id,customer_name) VALUES (0,'suzy');
+INSERT INTO customer_name (id,customer_name) VALUES (1,'yuni');
+INSERT INTO customer_name (id,customer_name) VALUES (3,'chelsea');
+INSERT INTO orders (id, customer_id) VALUES (230,5);
+INSERT INTO orders (id, customer_id) VALUES (20,0);
+UPDATE customer_name SET id = 6 WHERE id = 1;
+UPDATE orders SET customer_id = 5 WHERE id = 240;
+<CHECKPOINT>
+UPDATE orders SET customer_id = 3 WHERE id = 230;
+<CHECKPOINT>
