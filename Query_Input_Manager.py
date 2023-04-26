@@ -826,7 +826,12 @@ def EXECUTE(db_system:System,query:str):
     start_time = time.time()
     option,parser = GET_EVALUATOR_from_Query(query)
     if option=="SELECT":
-        return SELECT(db_system,parser)
+        
+        
+        return_table = SELECT(db_system,parser)
+        end_time = time.time()
+        print("Execution time:", end_time - start_time, "seconds")
+        return return_table
     elif option=="CREATETABLE":
         CREATE(db_system,parser)
     elif option=="DROPTABLE":
@@ -838,7 +843,7 @@ def EXECUTE(db_system:System,query:str):
     elif option=="DELETE":
         DELETE(db_system,parser)
     end_time = time.time()
-    print("Execution time:", end_time - start_time, "seconds")
+    # print("Execution time:", end_time - start_time, "seconds")
     return
 
 def UPDATE(db_system:System,update_parser:UPDATE_tree_Evaluator):
@@ -1072,21 +1077,21 @@ def demo_data():
     #     sql="INSERT INTO Rel2 (index, value) VALUES "+i_1
     #     sql_list.append(sql)
 
-    # sql="CREATE TABLE Rel3 (index INT PRIMARY KEY, value INT);"
-    # sql_list.append(sql)
-    # sql="CREATE TABLE Rel4 (index INT PRIMARY KEY, value INT);"
-    # sql_list.append(sql)
+    sql="CREATE TABLE Rel3 (index INT PRIMARY KEY, value INT);"
+    sql_list.append(sql)
+    sql="CREATE TABLE Rel4 (index INT PRIMARY KEY, value INT);"
+    sql_list.append(sql)
 
 
-    # for i in range(1,10001):
-    #     i_i="("+str(i)+","+str(i)+");"
-    #     sql="INSERT INTO Rel3 (index, value) VALUES "+i_i
-    #     sql_list.append(sql)
+    for i in range(1,10001):
+        i_i="("+str(i)+","+str(i)+");"
+        sql="INSERT INTO Rel3 (index, value) VALUES "+i_i
+        sql_list.append(sql)
 
 
-    #     i_1="("+str(i)+",1);"
-    #     sql="INSERT INTO Rel4 (index, value) VALUES "+i_1
-    #     sql_list.append(sql)
+        i_1="("+str(i)+",1);"
+        sql="INSERT INTO Rel4 (index, value) VALUES "+i_1
+        sql_list.append(sql)
 
 
     sql="CREATE TABLE Rel5 (index INT PRIMARY KEY, value INT);"
@@ -1121,10 +1126,11 @@ if __name__=='__main__':
     # print(EVALUATOR.get_result())
 
 
-    test_system = System()
-    test_system.init_database("NEWDEMO")
-    # test_system = load_database("NEWDEMO")
-    # recover(test_system)
+    # test_system = System()
+    # test_system.init_database("DEMODATA")
+    test_system = load_database("DEMODATA")
+    recover(test_system)
+    test_system.TREE_OPTIMIZER = True
     query_num = 0
     
     
@@ -1184,11 +1190,6 @@ if __name__=='__main__':
     # sql_list.append("exit")
     # start_time = time.time()
     # for sql in sql_list:
-        # print('Tell Me Your Option: \n create your own query \n Type \'EXAMPLE\' to use some given example queries \n Type \'EXIT\' to quit: \n')
-        # sql = input('Please Input >>> ')
-
-            # execution: get result dict
-
     
     #     if sql == "example" or sql=="EXAMPLE":
     #         example = input('Choose from given example by typing a name below: \n \t CREATE TABLE \n \t SELECT \n \t UPDATE \n \t INSERT \n \t DELETE \n \t DROP TABLE \n >')

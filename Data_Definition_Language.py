@@ -36,7 +36,7 @@ class System:
         self.avlTree_dict = {}
 
 
-        self.TREE_OPTIMIZER = True
+        self.TREE_OPTIMIZER = False
         self.JOIN_OPTIMIZER = True
         self.INDEX = True
 
@@ -1240,6 +1240,7 @@ class System:
         if len(condition) != 3:
             return 10000000
         op = condition[1]
+        print("here",op)
         # TODO: need to think twice
         try:
             val = int(condition[2])
@@ -1350,29 +1351,34 @@ class System:
 
         else: # two conditions 
             primary_list = self.find_primary_key(relation_name)
-            if (self.TREE_OPTIMIZER == True) and (condition[0][0] in primary_list) and (condition[2][0] in primary_list):
+            if (self.TREE_OPTIMIZER == True) and (conditions[0][0] in primary_list) and (conditions[2][0] in primary_list):
                  # put query that easy to be False in the front
                     
-                condition_1_num = self.get_condition_number(relation_name,condition[0])
-                condition_2_num = self.get_condition_number(relation_name,condition[1])
+                condition_1_num = self.get_condition_number(relation_name,conditions[0])
+                print(condition_1_num,conditions[0])
+
+                condition_2_num = self.get_condition_number(relation_name,conditions[2])
+                print(condition_2_num,conditions[2])
+                operation = conditions[1]
                 if operation == "AND":
                     if condition_1_num <= condition_2_num:
                         condition_1 = conditions[0]
-                        operation = conditions[1]
+                        
                         condition_2 = conditions[2]
+                        
                     else:
                         condition_1 = conditions[2]
-                        operation = conditions[1]
                         condition_2 = conditions[0]
+                        print("swap")
                 if operation == "OR":
                     if condition_1_num >= condition_2_num:
                         condition_1 = conditions[0]
-                        operation = conditions[1]
                         condition_2 = conditions[2]
                     else:
                         condition_1 = conditions[2]
-                        operation = conditions[1]
                         condition_2 = conditions[0]
+                        print("swap")
+
             else:
                 condition_1 = conditions[0]
                 operation = conditions[1]
