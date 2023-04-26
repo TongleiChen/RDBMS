@@ -2,7 +2,7 @@
 # Parser: 
 #    Obtain SQL grammer
 #    (Recursive descent) parser
-from collections import namedtuple
+# from collections import namedtuple
 from lark import Lark
 from beautifultable import BeautifulTable
 from Data_Definition_Language import System
@@ -838,7 +838,7 @@ def EXECUTE(db_system:System,query:str):
     elif option=="DELETE":
         DELETE(db_system,parser)
     end_time = time.time()
-    # print("Execution time:", end_time - start_time, "seconds")
+    print("Execution time:", end_time - start_time, "seconds")
     return
 
 def UPDATE(db_system:System,update_parser:UPDATE_tree_Evaluator):
@@ -1119,10 +1119,12 @@ if __name__=='__main__':
     # test_query="DROP INDEX index_name;"
     # EVALUATOR=GET_EVALUATOR_from_Query(test_query)
     # print(EVALUATOR.get_result())
-    # test_system = System()
-    # test_system.init_database("DEMO")
-    test_system = load_database("DEMO")
-    recover(test_system)
+
+
+    test_system = System()
+    test_system.init_database("NEWDEMO")
+    # test_system = load_database("NEWDEMO")
+    # recover(test_system)
     query_num = 0
     
     
@@ -1618,3 +1620,4 @@ if __name__=='__main__':
 
     
     
+    # SELECT Rel1.index, Rel6.index, Rel6.value FROM Rel1 INNER JOIN Rel6 ON Rel1.index = Rel6.index LIMIT 10;

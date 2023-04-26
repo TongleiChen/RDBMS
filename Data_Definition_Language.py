@@ -4,7 +4,8 @@ import shutil
 import copy
 from BTrees.OOBTree import OOBTree
 import pickle
-
+from tqdm import tqdm
+from AVLTree import avlTree
 
 
 # YUNI: 一边骂别人不写注释一边自己不写注释的我本人
@@ -30,9 +31,14 @@ class System:
         self.foreign_key = {'foreign_key_0':{},
                             'foreign_key_1':{}
                             }
-        
         # table_0:{"table_1":[table_1_name],"col_0":[col_name_0],"col_1":[col_name_1]}
         # table_1:{"table_0":[table_0_name],"col_0":[col_name_0],"col_1":[col_name_1]}
+        self.avlTree_dict = {}
+
+
+        self.TREE_OPTIMIZER = True
+        self.JOIN_OPTIMIZER = True
+        self.INDEX = True
 
     def save_database(self):
         database_file_path = os.path.join("data",self.database_name)
@@ -214,6 +220,7 @@ class System:
             else:
                 self.table_attributes[relation_name][col_name_i].append("False")
         self.create_index(relation_name,"default_name")
+        self.create_avlTree(relation_name)
         if len(foreign_key_col) != 0:
             # TODO: check references
             # 0 --> 1
@@ -435,6 +442,8 @@ class System:
             # print("*******",inserted_index_value)
             inseted_index_key = self.database_tables[relation_name][primary_key][inserted_index_value]
             self.table_index[relation_name].setdefault(inseted_index_key,inserted_index_value)
+            self.avlTree_dict[relation_name].tree_insert(inseted_index_key)
+
             
 
         
@@ -497,10 +506,10 @@ class System:
             # add index for the inserted data
             inserted_index_value = len(self.database_tables[relation_name][column])-1
             primary_key = primary_key_list[0]
-            print(self.database_tables[relation_name])
             # print("*******",inserted_index_value)
             inseted_index_key = self.database_tables[relation_name][primary_key][inserted_index_value]
             self.table_index[relation_name].setdefault(inseted_index_key,inserted_index_value)
+            self.avlTree_dict[relation_name].tree_insert(inseted_index_key)
             
 
         
@@ -609,19 +618,30 @@ class System:
                     col_1_val = self.database_tables[relation_name][col_1][delete_i]
                     if col_1_val in self.database_tables[table_0][col_0]:
                         raise SystemError("DELETE ERROR: Violate foreign key constraints.")
-                        return
         
 
 
         delete_row_list_reverse = delete_row_list[::-1]
+        primary_key_col = self.find_primary_key(relation_name)[0]
         for delete_idx in delete_row_list_reverse:
             for column in self.table_attributes[relation_name].keys():
 
-                del self.database_tables[relation_name][column][delete_idx]
+                deleted_val = self.database_tables[relation_name][column].pop(delete_idx)
+
+                if primary_key_col == column:
+                    self.avlTree_dict[relation_name].tree_delete(deleted_val)
+                    del self.table_index[relation_name][deleted_val]
+    
+
+
         
+
+
         # update index key after the first delete row!!
         # TODO: NEED TO BE TESTED 0417
-
+        # print(delete_row_list)
+        if len(delete_row_list) == 0:
+            return
         if relation_name in self.table_index:
             delete_row_list_first = delete_row_list[0]
             total_number_row -= len(delete_row_list)
@@ -795,8 +815,11 @@ class System:
 
                 # TODO: NEED TO BE TESTED 0417
                 if (relation_name in self.table_index) and (column in primary_key_list):
-                    updated_row_num = self.table_index[relation_name].pop(origin_val) # should equal to j
+                    updated_row_num = self.table_index[relation_name].pop(origin_val) 
                     self.table_index[relation_name].setdefault(update_dict['vals'][j],updated_row_num)
+                    self.avlTree_dict[relation_name].tree_delete(origin_val)
+                    self.avlTree_dict[relation_name].tree_insert(update_dict['vals'][j])
+
 
                 
         return
@@ -954,7 +977,8 @@ class System:
                 if (relation_name in self.table_index) and (column in primary_key_list):
                     updated_row_num = self.table_index[relation_name].pop(origin_val) # should equal to j
                     self.table_index[relation_name].setdefault(update_dict['vals'][j],updated_row_num)
-
+                    self.avlTree_dict[relation_name].tree_delete(origin_val)
+                    self.avlTree_dict[relation_name].tree_insert(update_dict['vals'][j])
                 
         return
     
@@ -998,6 +1022,11 @@ class System:
         self.index_table_name[index_name] = relation_name
 
         return 
+    
+    def create_avlTree(self,relation_name):
+        new_tree = avlTree()
+        self.avlTree_dict[relation_name] = new_tree
+        return
     
     def drop_index(self,relation_name,index_name):
         del self.index_table_name[index_name]
@@ -1045,7 +1074,7 @@ class System:
 
             new_table[c_2_name] = []
         
-        for r_1 in range(row_num_1):
+        for r_1 in tqdm(range(row_num_1)):
             value_1 = self.database_tables[table_1][table_1_col][r_1]
             for r_2 in range(row_num_2):
                 value_2 = self.database_tables[table_2][table_2_col][r_2]
@@ -1207,7 +1236,33 @@ class System:
 
 
                 
+    def get_condition_number(self,relation_name:str,condition:list):
+        if len(condition) != 3:
+            return 10000000
+        op = condition[1]
+        # TODO: need to think twice
+        try:
+            val = int(condition[2])
+        except:
+            val = condition[2]
+        if op == "=":
+            condition_num = self.avlTree_dict[relation_name].tree_get_position(val,True) - self.avlTree_dict[relation_name].tree_get_position(val,False)
+            return condition_num
+        if op == ">=":
+            condition_num = self.avlTree_dict[relation_name].tree_weight() - self.avlTree_dict[relation_name].tree_get_position(val,False)
+            return condition_num
+        if op == ">":
+            condition_num = self.avlTree_dict[relation_name].tree_weight() - self.avlTree_dict[relation_name].tree_get_position(val,True)
+            return condition_num
+        if op == "<":
+            condition_num = self.avlTree_dict[relation_name].tree_get_position(val,False)
+            return condition_num
+        if op == "<=":
+            condition_num = self.avlTree_dict[relation_name].tree_get_position(val,True)
+            return condition_num
+        
 
+        
     def select_where(self,relation_name:str,conditions:list):
         # YUNI 0419 TESTED
 
@@ -1294,9 +1349,34 @@ class System:
             return selected_table,selected_row_num
 
         else: # two conditions 
-            condition_1 = conditions[0]
-            operation = conditions[1]
-            condition_2 = conditions[2]
+            primary_list = self.find_primary_key(relation_name)
+            if (self.TREE_OPTIMIZER == True) and (condition[0][0] in primary_list) and (condition[2][0] in primary_list):
+                 # put query that easy to be False in the front
+                    
+                condition_1_num = self.get_condition_number(relation_name,condition[0])
+                condition_2_num = self.get_condition_number(relation_name,condition[1])
+                if operation == "AND":
+                    if condition_1_num <= condition_2_num:
+                        condition_1 = conditions[0]
+                        operation = conditions[1]
+                        condition_2 = conditions[2]
+                    else:
+                        condition_1 = conditions[2]
+                        operation = conditions[1]
+                        condition_2 = conditions[0]
+                if operation == "OR":
+                    if condition_1_num >= condition_2_num:
+                        condition_1 = conditions[0]
+                        operation = conditions[1]
+                        condition_2 = conditions[2]
+                    else:
+                        condition_1 = conditions[2]
+                        operation = conditions[1]
+                        condition_2 = conditions[0]
+            else:
+                condition_1 = conditions[0]
+                operation = conditions[1]
+                condition_2 = conditions[2]
 
             # TODO: optimization here!!!
             # TODO: primary key with index
