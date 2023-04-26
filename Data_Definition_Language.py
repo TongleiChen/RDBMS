@@ -1384,8 +1384,6 @@ class System:
                 operation = conditions[1]
                 condition_2 = conditions[2]
 
-            # TODO: optimization here!!!
-            # TODO: primary key with index
             if operation == "AND":
 
                 data_table_output,_ = self.select_where(relation_name,[condition_1]) # meet with condition1 and meet with condition2
@@ -1393,13 +1391,12 @@ class System:
                 return data_table_output_2,[]
             else: # operation == "OR": condition_1 = True
                  # IN condition_1 = False find condition_2 = True
-                 # TODO: 
-                 # 好像要加一个参数要不要输出data_table_output
-                 # 明天再确认一下 现在脑子不太清醒 又感觉好像不用
                 _,selected_row_list = self.select_where(relation_name,[condition_1])
+                selected_row_set = set(selected_row_list)
+
                 columns_list = self.get_column_list(relation_name)
                 row_num_ = self.get_row_num(relation_name)
-                not_selected_list = [x for x in range(row_num_) if x not in selected_row_list]
+                not_selected_list = [x for x in range(row_num_) if x not in selected_row_set]
                 data_remain = {}
                 for column in columns_list:
                     data_remain[column] = []

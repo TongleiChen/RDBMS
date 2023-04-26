@@ -1130,7 +1130,7 @@ if __name__=='__main__':
     # test_system.init_database("DEMODATA")
     test_system = load_database("DEMODATA")
     recover(test_system)
-    test_system.TREE_OPTIMIZER = True
+    test_system.TREE_OPTIMIZER = False
     query_num = 0
     
     
@@ -1622,3 +1622,7 @@ if __name__=='__main__':
     
     
     # SELECT Rel1.index, Rel6.index, Rel6.value FROM Rel1 INNER JOIN Rel6 ON Rel1.index = Rel6.index LIMIT 10;
+
+
+
+    # SELECT * FROM Rel5 WHERE index > 5 OR index < 99990 LIMIT 10;

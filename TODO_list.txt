@@ -48,3 +48,9 @@ DROP✅
 0422:
 1. Execution: JOIN: sorted merge and (✅) nested loop join
 2. conjunctive and disjunctive 
+
+
+0426:
+1. Disjunctive OR
+2. Execution: JOIN: sorted merge
+3. Test query

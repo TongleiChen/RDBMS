@@ -143,16 +143,16 @@ class avlTree:
             else:
                 return front_pos + left_weight
         elif root.key > value:
-                if root.left == None:
-                    return front_pos
-                else:
-                    return self.get_position(root.left,value,front_pos,equal)
+            if root.left == None:
+                return front_pos
+            else:
+                return self.get_position(root.left,value,front_pos,equal)
         else: # root.key < value
             _,left_weight = self.left_child_condition(root)
             if root.right == None:
                 return front_pos + root.frequency
             else:
-                return self.get_position(root.right,value,left_weight+root.frequency,equal)
+                return front_pos + self.get_position(root.right,value,left_weight+root.frequency,equal)
 
     def tree_insert(self,new_node_value:int):
         self.root = self.insert(new_node_value,self.root)
@@ -173,32 +173,55 @@ class avlTree:
             return 0
         else:
             return self.root.weight
+    
+    def get_condition_number(self,condition:list):
+        if len(condition) != 3:
+            return 10000000
+        op = condition[1]
+        print("here",op)
+        # TODO: need to think twice
+        try:
+            val = int(condition[2])
+        except:
+            val = condition[2]
+        if op == "=":
+            condition_num = self.tree_get_position(val,True) - self.tree_get_position(val,False)
+            return condition_num
+        if op == ">=":
+            condition_num = self.tree_weight() - self.tree_get_position(val,False)
+            return condition_num
+        if op == ">":
+            condition_num = self.tree_weight() - self.tree_get_position(val,True)
+            return condition_num
+        if op == "<":
+            condition_num = self.tree_get_position(val,False)
+            return condition_num
+        if op == "<=":
+            condition_num = self.tree_get_position(val,True)
+            return condition_num
+
 if __name__ == "__main__":
     test_tree = avlTree()
     import random
 
     random_numbers = []
 
-    for i in range(500):
-        num = random.randint(1, 100)
-        random_numbers.append(num)
+    for i in range(1,100001):
 
-        test_tree.tree_insert(num)
-    for j in range(25):
-        num = random_numbers[j]
-        test_tree.tree_delete(num)
+        test_tree.tree_insert(i)
     
     # print(test_tree.root.key)
     # print(test_tree.root.left.weight)
     # print(test_tree.root.right.weight)
     
-    random_numbers = random_numbers[25:]
-    random_numbers.sort()
+    # random_numbers = random_numbers[25:]
+    # random_numbers.sort()
 
-    print(random_numbers[40])
-    print(test_tree.tree_find(41))
-    print(random_numbers[:20])
-    print(test_tree.tree_get_position(random_numbers[9],True))
+    # print(random_numbers[40])
+    # print(test_tree.tree_find(41))
+    # print(random_numbers[:20])
+    # print(test_tree.get_condition_number(["test","<",99990]))
+    print(test_tree.tree_get_position(99990,False))
 
 
 
