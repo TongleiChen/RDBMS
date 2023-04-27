@@ -1073,19 +1073,19 @@ def examples(option):
 
 def demo_data():
     sql_list = []
-    # sql="CREATE TABLE Rel1 (index INT PRIMARY KEY, value INT);"
-    # sql_list.append(sql)
-    # sql2="CREATE TABLE Rel2 (index INT PRIMARY KEY, value INT);"
-    # sql_list.append(sql2)
+    sql="CREATE TABLE Rel1 (index INT PRIMARY KEY, value INT);"
+    sql_list.append(sql)
+    sql2="CREATE TABLE Rel2 (index INT PRIMARY KEY, value INT);"
+    sql_list.append(sql2)
 
-    # for i in range(1,1001):
-    #     i_i="("+str(i)+","+str(i)+");"
-    #     sql="INSERT INTO Rel1 (index, value) VALUES "+i_i
-    #     sql_list.append(sql)
+    for i in range(1,1001):
+        i_i="("+str(i)+","+str(i)+");"
+        sql="INSERT INTO Rel1 (index, value) VALUES "+i_i
+        sql_list.append(sql)
 
-    #     i_1="("+str(i)+",1);"
-    #     sql="INSERT INTO Rel2 (index, value) VALUES "+i_1
-    #     sql_list.append(sql)
+        i_1="("+str(i)+",1);"
+        sql="INSERT INTO Rel2 (index, value) VALUES "+i_1
+        sql_list.append(sql)
 
     sql="CREATE TABLE Rel3 (index INT PRIMARY KEY, value INT);"
     sql_list.append(sql)
@@ -1133,7 +1133,7 @@ if __name__=='__main__':
         recover(test_system)
     
     test_system.TREE_OPTIMIZER = True
-    test_system.JOIN_OPTIMIZER = False
+    test_system.JOIN_OPTIMIZER = True
 
     query_num = 0
     
@@ -1175,11 +1175,11 @@ if __name__=='__main__':
             if sql=="exit" or sql=="EXIT":
                 break
             # EVALUATOR=GET_EVALUATOR_from_Query(sql)
-            # try:
-            res = EXECUTE(db_system=test_system,query=sql)
-            # except Exception as e:
-            #     print("{}: {}".format(type(e).__name__,e))
-                # continue
+            try:
+                res = EXECUTE(db_system=test_system,query=sql)
+            except Exception as e:
+                print("{}: {}".format(type(e).__name__,e))
+                continue
             if res != None:
                 DISPLAY_SQL_RESULTS(res)
             else:
