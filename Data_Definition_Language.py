@@ -6,6 +6,7 @@ from BTrees.OOBTree import OOBTree
 import pickle
 from tqdm import tqdm
 from AVLTree import avlTree
+import math
 
 
 # YUNI: 一边骂别人不写注释一边自己不写注释的我本人
@@ -318,6 +319,8 @@ class System:
         del self.table_path[relation_name]
         del self.table_attributes[relation_name]
         del self.database_tables[relation_name]
+        del self.table_index[relation_name]
+        del self.avlTree_dict[relation_name]
         
         
 
@@ -451,21 +454,23 @@ class System:
 
     def insert_data_no_index(self,relation_name:str,insert_cols:list,insert_vals:list):
 
-
         # check duplicates
         # TODO: Check len(insert_col) 
         primary_key_list = self.find_primary_key(relation_name)
         inserted_primary_key = []
+        
         for i,column in enumerate(insert_cols):
             if column in primary_key_list:
-                try_insert_list = copy.deepcopy(self.database_tables[relation_name][column])
+                inserted_primary_key = copy.deepcopy(self.database_tables[relation_name][column])
                 if self.table_attributes[relation_name][column][0] == 'INT':
-                    try_insert_list.append(int(insert_vals[i]))
-                    insert_vals[i] = int(insert_vals[i])
+                    # try_insert_list.append(int(insert_vals[i]))
+                    insert_num = int(insert_vals[i])
                 else:
-                    try_insert_list.append(insert_vals[i])
-                inserted_primary_key.append(try_insert_list)
-        if self.check_duplicates(inserted_primary_key) == True:
+                    insert_num = insert_vals[i]
+
+                    # try_insert_list.append(insert_vals[i])
+                # inserted_primary_key.append(try_insert_list,try_insert_list)
+        if self.check_duplicates_no_index(inserted_primary_key,insert_num) == True:
             raise SystemError("Insertion ERROR: There exists DUPLICATES. ")
         # TODO: insert_col not null check?
         
@@ -482,9 +487,9 @@ class System:
                     col_0_val = int(col_0_val)
                 except:
                     col_0_val = insert_vals[position]
-                print("****",type(col_0_val))
-                print(self.database_tables[table_1][col_1])
-                print(col_0_val not in self.database_tables[table_1][col_1])
+                # print("****",type(col_0_val))
+                # print(self.database_tables[table_1][col_1])
+                # print(col_0_val not in self.database_tables[table_1][col_1])
                 if col_0_val not in self.database_tables[table_1][col_1]:
                     raise SystemError("INSERT ERROR: Violate the foreign key constraints. ")
                 
@@ -545,18 +550,22 @@ class System:
 
 
 
-
-    def check_duplicates_no_index(self,primary_column_list):
+ 
+    def check_duplicates_no_index(self,primary_column_list,new_num):
         # return False -> no duplicates
         # return True -> has duplicates
-        if len(primary_column_list) == 1:
-            if len(primary_column_list[0]) == len(set(primary_column_list[0])):
-                return False
-        else:
-            primary_key_pairs = list(zip(*primary_column_list))
-            if len(primary_key_pairs) == len(set(primary_key_pairs)):
-                return False
-        return True
+        # if len(primary_column_list) == 1:
+        for p in primary_column_list:
+            for q in primary_column_list:
+                for r in range(10):
+                    if p == new_num:
+                        return True
+
+        # else:
+        #     primary_key_pairs = list(zip(*primary_column_list))
+        #     if len(primary_key_pairs) == len(set(primary_key_pairs)):
+        #         return False
+        return False
     def delete_data_dict(self,relation_name:str, where_dict:dict):
         # YUNI: 0415 TESTED
         table_attri = self.get_column_list(relation_name)
@@ -909,7 +918,7 @@ class System:
             
             if match_flag == True:
                 update_row_list.append(i)
-        print("###",update_row_list)
+        # print("###",update_row_list)
         
         primary_key_list = self.find_primary_key(relation_name)
         primary_update_list = []
@@ -967,8 +976,8 @@ class System:
 
         for update_idx in update_row_list:
             for j,column in enumerate(update_dict['cols']):
-                print(self.database_tables[relation_name][column])
-                print(update_dict['vals'])
+                # print(self.database_tables[relation_name][column])
+                # print(update_dict['vals'])
                 origin_val = self.database_tables[relation_name][column][update_idx]
                 self.database_tables[relation_name][column][update_idx] = update_dict['vals'][j]
 
@@ -1043,9 +1052,143 @@ class System:
     ############    虔诚地给select开辟一块地    ############
     #####################################################
 
+    def check_sort(self,n:int,m:int):
+        base = 2
+        return n * math.log(n, base) + m * math.log(m, base) + n + m - 1 < n * m
+
+    def join_sort(self, pk, table, col):
+        # lst_num = self.table_index[table][pk]
+        return self.database_tables[table][col][pk]
+
+    def sorted_merge_join(self,table_1:str, table_1_col:str, 
+                         table_2:str, table_2_col:str,
+                         projection_cols_1:list,projection_cols_2:list):
+        # only support join grammar like 
+        # SELECT table_1.column, table_2.column 
+        # FROM table_1 INNER JOIN table_2 
+        # ON table_1.column2 = table_2.column2;
 
 
+        # YUNI 0419 TESTED!
+        # print(table_1,table_1_col,table_2,table_2_col,projection_cols_1,projection_cols_2)
+        row_num_1 = self.get_row_num(table_1)
+        row_num_2 = self.get_row_num(table_2)
+        new_table = {}  # structure similar to self.database_tables[relation_name] {'column_1':[],'column_2':[]}
+        for c_1 in projection_cols_1:
+            c_1_name = "{}.{}".format(table_1,c_1)
+
+            new_table[c_1_name] = []
+        for c_2 in projection_cols_2:
+            c_2_name = "{}.{}".format(table_2,c_2)
+
+            new_table[c_2_name] = []
+        
+        if self.JOIN_OPTIMIZER == True and self.check_sort(row_num_1, row_num_2):
+
+            primary_key_1 = self.find_primary_key(table_1)[0]
+            lst1 = self.database_tables[table_1][primary_key_1]
+            lst1 = [x for x in range(row_num_1)]
             
+            primary_key_2 = self.find_primary_key(table_2)[0]
+            lst2 = self.database_tables[table_2][primary_key_2]
+            lst2 = [x for x in range(row_num_2)]
+
+            lst1 = sorted(lst1, key=lambda x: self.join_sort(x, table_1, table_1_col))
+            lst2 = sorted(lst2, key=lambda x: self.join_sort(x, table_2, table_2_col))
+            ptr1 = 0
+            len1 = len(lst1)
+            ptr2 = 0
+            len2 = len(lst2)
+
+            #         lst_num = self.table_index[table][pk]
+            #         return self.database_tables[table][col][lst_num]
+            join_list_1 = []
+            join_list_2 = []
+
+            import time
+
+            st =  time.time()
+            while ptr1<len1 and ptr2<len2:
+                ans1 = self.database_tables[table_1][table_1_col][lst1[ptr1]]
+                ans2 = self.database_tables[table_2][table_2_col][lst2[ptr2]]
+
+                # print(ans1, ans2)
+                #ptr1+=1
+                #ptr2+=1
+                # [1  1  3  3  5 5 5]
+                # [0, 1, 3, 4, 5]
+                if ans1 < ans2:
+                    ptr1+=1
+                    continue
+                if ans1 > ans2:
+                    ptr2+=1
+                    continue
+                if ans1 == ans2:
+                    step1 = 0
+                    for tmp in range(0, len1-ptr1):
+                        # print("IAM", self.database_tables[table_2][table_2_col][lst2[ptr2+tmp]])
+                        if self.database_tables[table_1][table_1_col][lst1[ptr1+tmp]] == ans1:
+                            step1 += 1
+                        else:
+                            break
+
+                    # print(time.time()-st,"eeee")
+
+                    step2 = 0
+                    for tmp in range(0, len2-ptr2):
+
+                        if self.database_tables[table_2][table_2_col][lst2[ptr2+tmp]] == ans2:
+                            step2 += 1
+                        else:
+                            break
+                    
+                    # print(time.time()-st,"qqqqq")
+
+                    for pp1 in range(ptr1, ptr1+step1):
+                        for pp2 in range(ptr2, ptr2+step2):
+                            # print("same", self.database_tables[table_1][table_1_col][self.table_index[table_1][lst1[pp1]]], 
+                            #       self.database_tables[table_2][table_2_col][self.table_index[table_2][lst2[pp2]]])
+                            join_list_1.append(lst1[pp1])
+                            join_list_2.append(lst2[pp2])
+
+                            #row_cnt += join_judger(rela1, ans1, ans2, logic, mpAttr, sorted_uu_list1[pp1], sorted_uu_list2[pp2])
+                    # print(time.time()-st,"wwww")
+                    # return
+
+
+                    ptr1 = ptr1+step1
+                    ptr2 = ptr2+step2
+            # print("consume", time.time()-st)
+            # print(join_list_1)
+            # print(join_list_2)
+
+            for row_idx, p1 in enumerate(join_list_1):
+                p2 = join_list_2[row_idx]
+                for c_1 in projection_cols_1:
+                    c_1_name = "{}.{}".format(table_1,c_1)
+                    new_table[c_1_name].append(self.database_tables[table_1][c_1][p1])
+                for c_2 in projection_cols_2:
+                    c_2_name = "{}.{}".format(table_2,c_2)
+                    new_table[c_2_name].append(self.database_tables[table_2][c_2][p2])
+        # for r_1 in tqdm(range(row_num_1)):
+        #     value_1 = self.database_tables[table_1][table_1_col][r_1]
+        #     for r_2 in range(row_num_2):
+        #         value_2 = self.database_tables[table_2][table_2_col][r_2]
+        #         if value_1 == value_2:
+        #             pass
+        #         else:
+        #             continue
+        #          # when come to this line, join two tables
+        #         for c_1 in projection_cols_1:
+        #             c_1_name = "{}.{}".format(table_1,c_1)
+        #             new_table[c_1_name].append(self.database_tables[table_1][c_1][r_1])
+        #         for c_2 in projection_cols_2:
+        #             c_2_name = "{}.{}".format(table_2,c_2)
+        #             new_table[c_2_name].append(self.database_tables[table_2][c_2][r_2])
+        # # print(new_table)  
+        else:
+            new_table = self.nested_loop_join(table_1,table_1_col,table_2,table_2_col,projection_cols_1,projection_cols_2)
+        return new_table
             
 
 
@@ -1115,7 +1258,32 @@ class System:
             for column in table_data.keys():
                 new_table[column].append(table_data[column][idx])
         return new_table
-
+    def identify_or(self,op,val,value_in_row):
+        if op == ">":
+            if value_in_row > val:
+                return True
+            else:
+                return False
+        elif op == ">=":
+            if value_in_row >= val:
+                return True
+            else:
+                return False
+        elif op == "=":
+            if value_in_row == val:
+                return True
+            else:
+                return False
+        elif op == "<=":
+            if value_in_row <= val:
+                return True
+            else:
+                return False
+        elif op == "<":
+            if value_in_row < val:
+                return True
+            else:
+                return False
     def select_where_from_output(self,data_table:dict,conditions:list):
         # YUNI 0419 TESTED
         # single table, condition at most 2.
@@ -1204,22 +1372,54 @@ class System:
                  # IN condition_1 = False find condition_2 = True
                  # 好像要加一个参数要不要输出data_table_output
                  # 明天再确认一下 现在脑子不太清醒 又感觉好像不用
-                _,selected_row_list = self.select_where_from_output(data_table,[condition_1])
-                columns_list_ = list(data_table.keys())
-                row_num_ = len(data_table[columns_list_[0]])
-                not_selected_list = [i for i in range(row_num_)] - selected_row_list
-                data_remain = {}
-                for column in columns_list:
-                    data_remain[column] = []
-                for r_not_s in not_selected_list:
-                    for column in columns_list:
-                        data_remain[column].append(data_table[column][r_not_s])
+                col_1 = condition_1[0]
+                op_1 = condition_1[1]
+
+                try:
+                    val_1 = int(condition_1[2])
+                except:
+                    val_1 = condition_1[2]
+                
+                
+                for r in range(row_num):
+                    value_in_row_1 = data_table[col_1][r]
+                    if self.identify_or(op_1,val_1,value_in_row_1):
+
+                    # when come to this line: meet the requirement and select
+                        selected_row_num.append(r)
+                        continue
+                    else:
+                        col_2 = condition_2[0]
+                        op_2 = condition_2[1]
+
+                        try:
+                            val_2 = int(condition_2[2])
+                        except:
+                            val_2 = condition_2[2]
+                        value_in_row_2 = data_table[col_2][r]
+                        
+                        if self.identify_or(op_2,val_2,value_in_row_2):
+                            selected_row_num.append(r)
+
+
+
+                
+                # _,selected_row_list = self.select_where_from_output(data_table,[condition_1])
+                # columns_list_ = list(data_table.keys())
+                # row_num_ = len(data_table[columns_list_[0]])
+                # not_selected_list = [i for i in range(row_num_)] - selected_row_list
+                # data_remain = {}
+                # for column in columns_list:
+                #     data_remain[column] = []
+                # for r_not_s in not_selected_list:
+                #     for column in columns_list:
+                #         data_remain[column].append(data_table[column][r_not_s])
                     
-                _,selected_row_list_2 = self.select_where_from_output(data_remain,[condition_2])
-                selected_row_total = set(selected_row_list + selected_row_list_2)
+                # _,selected_row_list_2 = self.select_where_from_output(data_remain,[condition_2])
+                # selected_row_total = set(selected_row_list + selected_row_list_2)
                 for column in columns_list:
                     selected_table[column] = []
-                for s_t in selected_row_total:
+                for s_t in selected_row_num:
                     for column in columns_list:
                         selected_table[column].append(data_table[column][s_t])
                 return selected_table,[]
@@ -1240,7 +1440,7 @@ class System:
         if len(condition) != 3:
             return 10000000
         op = condition[1]
-        print("here",op)
+        # print("here",op)
         # TODO: need to think twice
         try:
             val = int(condition[2])
@@ -1355,10 +1555,10 @@ class System:
                  # put query that easy to be False in the front
                     
                 condition_1_num = self.get_condition_number(relation_name,conditions[0])
-                print(condition_1_num,conditions[0])
+                # print(condition_1_num,conditions[0])
 
                 condition_2_num = self.get_condition_number(relation_name,conditions[2])
-                print(condition_2_num,conditions[2])
+                # print(condition_2_num,conditions[2])
                 operation = conditions[1]
                 if operation == "AND":
                     if condition_1_num <= condition_2_num:
@@ -1369,7 +1569,7 @@ class System:
                     else:
                         condition_1 = conditions[2]
                         condition_2 = conditions[0]
-                        print("swap")
+                        # print("swap")
                 if operation == "OR":
                     if condition_1_num >= condition_2_num:
                         condition_1 = conditions[0]
@@ -1377,7 +1577,7 @@ class System:
                     else:
                         condition_1 = conditions[2]
                         condition_2 = conditions[0]
-                        print("swap")
+                        # print("swap")
 
             else:
                 condition_1 = conditions[0]
@@ -1391,28 +1591,59 @@ class System:
                 return data_table_output_2,[]
             else: # operation == "OR": condition_1 = True
                  # IN condition_1 = False find condition_2 = True
-                _,selected_row_list = self.select_where(relation_name,[condition_1])
-                selected_row_set = set(selected_row_list)
+                row_num = self.get_row_num(relation_name)
+                
+                col_1 = condition_1[0]
+                op_1 = condition_1[1]
 
+                try:
+                    val_1 = int(condition_1[2])
+                except:
+                    val_1 = condition_1[2]
+                
+                
+                for r in range(row_num):
+                    value_in_row_1 = self.database_tables[relation_name][col_1][r]
+                    if self.identify_or(op_1,val_1,value_in_row_1):
+
+                    # when come to this line: meet the requirement and select
+                        selected_row_num.append(r)
+                        continue
+                    else:
+                        col_2 = condition_2[0]
+                        op_2 = condition_2[1]
+
+                        try:
+                            val_2 = int(condition_2[2])
+                        except:
+                            val_2 = condition_2[2]
+                        value_in_row_2 = self.database_tables[relation_name][col_2][r]
+                        
+                        if self.identify_or(op_2,val_2,value_in_row_2):
+                            selected_row_num.append(r)
+
+
+
+                
+                # _,selected_row_list = self.select_where_from_output(data_table,[condition_1])
                 columns_list = self.get_column_list(relation_name)
-                row_num_ = self.get_row_num(relation_name)
-                not_selected_list = [x for x in range(row_num_) if x not in selected_row_set]
-                data_remain = {}
-                for column in columns_list:
-                    data_remain[column] = []
-                for r_not_s in not_selected_list:
-                    for column in columns_list:
-                        data_remain[column].append(self.database_tables[relation_name][column][r_not_s])
+                # row_num_ = len(data_table[columns_list_[0]])
+                # not_selected_list = [i for i in range(row_num_)] - selected_row_list
+                # data_remain = {}
+                # for column in columns_list:
+                #     data_remain[column] = []
+                # for r_not_s in not_selected_list:
+                #     for column in columns_list:
+                #         data_remain[column].append(data_table[column][r_not_s])
                     
-                _,selected_row_list_2 = self.select_where_from_output(data_remain,[condition_2])
-                selected_row_total = set(selected_row_list + selected_row_list_2)
+                # _,selected_row_list_2 = self.select_where_from_output(data_remain,[condition_2])
+                # selected_row_total = set(selected_row_list + selected_row_list_2)
                 for column in columns_list:
                     selected_table[column] = []
-                for s_t in selected_row_total:
+                for s_t in selected_row_num:
                     for column in columns_list:
                         selected_table[column].append(self.database_tables[relation_name][column][s_t])
                 return selected_table,[]
-
             
 
 

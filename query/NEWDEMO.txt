@@ -1,5 +1,5 @@
 CREATE TABLE customer_name (id INT PRIMARY KEY, customer_name VARCHAR(10));
-CREATE TABLE orders (id INT PRIMARY KEY, customer_id INT, FOREIGN KEY (customer_id) REFERENCES customer_name(id));
+CREATE TABLE orders (id INT PRIMARY KEY, customer_id INT, price INT, FOREIGN KEY (customer_id) REFERENCES customer_name(id));
 INSERT INTO customer_name (id, customer_name) VALUES (4,'Lesley');
 INSERT INTO orders (id, customer_id) VALUES (240,4);
 INSERT INTO customer_name (id,customer_name) VALUES (5,'Selina');

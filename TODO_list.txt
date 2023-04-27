@@ -51,6 +51,6 @@ DROP✅
 
 
 0426:
-1. Disjunctive OR
-2. Execution: JOIN: sorted merge
-3. Test query
+1. Disjunctive OR 
+2. Execution: JOIN: sorted merge✅
+3. Test query ✅
