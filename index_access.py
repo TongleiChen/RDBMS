@@ -11,11 +11,11 @@ import os
 import pickle
 import warnings
 import sys
-sys.setrecursionlimit(100000)
+sys.setrecursionlimit(1000000)
 warnings.filterwarnings("ignore")
 
 
-CHECKPOINT_QUERY_NUM = 10
+CHECKPOINT_QUERY_NUM = 1000
 
 
 
@@ -1073,15 +1073,15 @@ def examples(option):
 
 def demo_data():
     sql_list = []
-    sql="CREATE TABLE Rel1 (index INT PRIMARY KEY, value INT);"
-    sql_list.append(sql)
+    # sql="CREATE TABLE Rel1 (index INT PRIMARY KEY, value INT);"
+    # sql_list.append(sql)
     # sql2="CREATE TABLE Rel2 (index INT PRIMARY KEY, value INT);"
     # sql_list.append(sql2)
 
-    for i in range(1,501):
-        i_i="("+str(i)+","+str(i)+");"
-        sql="INSERT INTO Rel1 (index, value) VALUES "+i_i
-        sql_list.append(sql)
+    # for i in range(1,501):
+    #     i_i="("+str(i)+","+str(i)+");"
+    #     sql="INSERT INTO Rel1 (index, value) VALUES "+i_i
+    #     sql_list.append(sql)
 
         # i_1="("+str(i)+",1);"
         # sql="INSERT INTO Rel2 (index, value) VALUES "+i_1
@@ -1109,27 +1109,27 @@ def demo_data():
     # sql="CREATE TABLE Rel6 (index INT PRIMARY KEY, value INT);"
     # sql_list.append(sql)
 
-    # for i in range(1,100001):
-    #     i_i="("+str(i)+","+str(i)+");"
-    #     sql="INSERT INTO Rel5 (index, value) VALUES "+i_i
-    #     sql_list.append(sql)
+    for i in range(100001,150001):
+        # i_i="("+str(i)+","+str(i)+");"
+        # sql="INSERT INTO Rel5 (index, value) VALUES "+i_i
+        # sql_list.append(sql)
 
-    #     i_1="("+str(i)+",1);"
-    #     sql="INSERT INTO Rel6 (index, value) VALUES "+i_1
-    #     sql_list.append(sql)
+        i_1="("+str(i)+",1);"
+        sql="INSERT INTO Rel6 (index, value) VALUES "+i_1
+        sql_list.append(sql)
     
     return sql_list
 
 
 if __name__=='__main__':
 
-    # OPTION = "LOAD"
-    OPTION = "INIT"
+    OPTION = "LOAD"
+    # OPTION = "INIT"
     if OPTION == "INIT":
         test_system = System()
-        test_system.init_database("DEMO_INDEX")
+        test_system.init_database("DEMODATA")
     else: # load
-        test_system = load_database("DEMO_INDEX")
+        test_system = load_database("DEMODATA")
         recover(test_system)
     
     test_system.TREE_OPTIMIZER = True
