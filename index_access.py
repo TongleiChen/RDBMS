@@ -1109,7 +1109,7 @@ def demo_data():
     # sql="CREATE TABLE Rel6 (index INT PRIMARY KEY, value INT);"
     # sql_list.append(sql)
 
-    for i in range(100001,150001):
+    for i in range(150001,160001):
         # i_i="("+str(i)+","+str(i)+");"
         # sql="INSERT INTO Rel5 (index, value) VALUES "+i_i
         # sql_list.append(sql)
