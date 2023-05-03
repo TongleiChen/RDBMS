@@ -25,3 +25,6 @@ UPDATE orders SET customer_id = 3 WHERE id = 210;
 INSERT INTO orders (id, customer_id, price) VALUES (700,5, 1500);
 <CHECKPOINT>
 <CHECKPOINT>
+INSERT INTO orders (id, customer_id, price) VALUES (800,5, 2000);
+<CHECKPOINT>
+<CHECKPOINT>

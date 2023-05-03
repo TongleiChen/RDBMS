@@ -1,0 +1,86 @@
+
+
+
+CREATE TABLE customer_name (id INT PRIMARY KEY, customer_name VARCHAR(10));
+CREATE TABLE orders (id INT PRIMARY KEY, price INT, customer_id INT, FOREIGN KEY (customer_id) REFERENCES customer_name(id));
+INSERT INTO customer_name (id,customer_name) VALUES (1,'suzy');
+INSERT INTO customer_name (id,customer_name) VALUES (3,'chelsea');
+INSERT INTO customer_name (id,customer_name) VALUES (4,'lesley');
+INSERT INTO customer_name (id,customer_name) VALUES (5,'selina');
+SELECT * FROM customer_name;
+DROP TABLE customer_name;
+DROP TABLE orders;
+CREATE TABLE orders (id INT PRIMARY KEY, price INT, customer_id INT, FOREIGN KEY (customer_id) REFERENCES customer_name(id));
+INSERT INTO orders (id, customer_id, price) VALUES (100,5,700);
+INSERT INTO orders (id, customer_id, price) VALUES (200,5,600);
+INSERT INTO orders (id, customer_id, price) VALUES (210,5,500);
+INSERT INTO orders (id, price, customer_id) VALUES (300,100,2);
+INSERT INTO orders (id, price, customer_id) VALUES (400,800,1);
+INSERT INTO orders (id, price, customer_id) VALUES (500,300,1);
+INSERT INTO orders (id, price, customer_id) VALUES (600,900,3);
+SELECT * FROM orders;
+DELETE FROM orders WHERE id = 210;
+SELECT * FROM orders;
+DELETE FROM customer_name WHERE id = 4;
+DELETE FROM customer_name WHERE id = 5;
+INSERT INTO customer_name (id,customer_name) VALUES (4,'lesley');
+INSERT INTO orders (id, customer_id, price) VALUES (210,5,500);
+SELECT * FROM orders;
+UPDATE orders SET customer_id = 3 WHERE id = 210;
+SELECT * FROM orders;
+UPDATE customer_name SET id = 6 WHERE id = 3;
+SELECT id, price FROM orders ORDER BY price ASC;
+SELECT id, price FROM orders ORDER BY price DESC;
+SELECT customer_id, SUM(price),COUNT(id) FROM orders GROUP BY customer_id;
+SELECT customer_id, AVG(price) FROM orders GROUP BY customer_id;
+SELECT customer_id, MIN(price),MAX(id) FROM orders GROUP BY customer_id;
+SELECT customer_id, price, id FROM orders WHERE id = 200 AND customer_id = 5;
+SELECT customer_id, price, id FROM orders WHERE id = 200 OR customer_id = 5;
+SELECT customer_name.id, customer_name.customer_name, orders.id FROM orders INNER JOIN customer_name ON orders.customer_id = customer_name.id;
+INSERT INTO orders (id, customer_id, price) VALUES (700,5, 1500);
+
+
+
+
+INSERT INTO orders (id, customer_id, price) VALUES (800,5, 2000);
+
+SELECT COUNT(index) FROM Rel5;
+SELECT COUNT(index) FROM Rel1;
+SELECT COUNT(index) FROM Rel6;
+
+
+SELECT Rel1.index,Rel5.index,Rel5.value FROM Rel1 INNER JOIN Rel5 ON Rel1.index = Rel5.index LIMIT 10;
+SELECT Rel6.index,Rel6.value,Rel5.index,Rel5.value FROM Rel6 INNER JOIN Rel5 ON Rel6.index = Rel5.index LIMIT 10;
+
+SELECT COUNT(index) FROM Rel6;
+
+SELECT * FROM Rel7;
+SELECT Rel6.index,Rel6.value,Rel7.index,Rel7.value FROM Rel6 INNER JOIN Rel7 ON Rel6.index = Rel7.index LIMIT 10;
+
+
+
+
+SELECT * FROM Rel5 WHERE index > 5 AND index = 6;
+SELECT * FROM Rel5 WHERE index > 5 AND index = 6;
+SELECT * FROM Rel5 WHERE index = 6 AND index > 5;
+
+SELECT * FROM Rel5 WHERE index = 1 OR index > 9 LIMIT 10;
+SELECT * FROM Rel6 WHERE index = 1 OR index > 9 LIMIT 10;
+SELECT * FROM Rel6 WHERE index > 9 OR index = 1 LIMIT 10;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+SELECT * FROM Rel6 WHERE value = 9;
+SELECT * FROM Rel6 WHERE index = 9;

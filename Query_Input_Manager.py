@@ -1196,4 +1196,5 @@ if __name__=='__main__':
 
 
     # SELECT * FROM Rel5 WHERE index > 99990 OR index = 1 LIMIT 10;
-    # SELECT Rel1.index,Rel5.index,Rel5.value FROM Rel1 INNER JOIN Rel5 ON Rel1.index = Rel5.index LIMIT 10;
+    # SELECT Rel6.index,Rel6.value,Rel5.index,Rel5.value FROM Rel6 INNER JOIN Rel5 ON Rel6.index = Rel5.index LIMIT 10;
+    # SELECT Rel6.index,Rel6.value,Rel7.index,Rel7.value FROM Rel6 INNER JOIN Rel7 ON Rel6.index = Rel7.index LIMIT 10;
