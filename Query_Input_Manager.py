@@ -19,25 +19,7 @@ CHECKPOINT_QUERY_NUM = 10
 
 
 
-# start: database for testing
-# datatables = {
-# 	"people": {
-# 		"first_name": ["Elvis", "Elton", "Ariana", "Katy", "Blake"],
-# 		"last_name": ["Presley", "John", "Grande", "Perry", "Lively"],
-# 		"age": [42, 75, 36, 37, 34],
-# 		"city": ["Memphis", "Pinner", "Boca Raton", "Santa Barbara", "Los Angeles"],
-# 		"day": [8, 25, 6, 25, 25],
-# 		"month": [1, 3, 6, 10, 8],
-# 		"year": [1935, 1947, 1993, 1984, 1987],
-# 		"alive": ["no", "yes", "yes", "yes", "yes"]
-# 	},
-# 	"sports": {
-# 		"team": ["Arsenal", "Manchester United", "Brentford", "Liverpool"],
-# 		"city": ["London", "Manchester", "Brentford", "Liverpool"],
-# 		"standing": [4, 6, 12, 2],
-# 		"year_founded": [1886, 1878, 1889, 1892]
-# 	}
-# }
+
 # GLOBAL FOR
 comparisons = ["=", ">", "<", ">=", "<="]
 select_cols = []
@@ -504,12 +486,12 @@ class new_SELECT_tree_Evaluator:
             self.option["limit_clause"].append(int(tree.children[0].children[0].value))
         elif tree.data=="where_clause":
             self.eval_tree(tree.children[1]) # search condition
-        elif tree.data=="search_condition": # 只在where clause中出现
+        elif tree.data=="search_condition": 
             if len(tree.children)==1:
                 self.eval_tree(tree.children[0]) # predict
             elif len(tree.children)==3: # AND/OR
                 self.eval_tree(tree.children[0]) 
-                self.option["where_clause"].append(tree.children[1].value) # 先把AND OR append 进去
+                self.option["where_clause"].append(tree.children[1].value) 
                 self.eval_tree(tree.children[2])
         elif tree.data=="predicate":
             self.eval_tree(tree.children[0]) # between_predict / comparison_predict
@@ -1124,12 +1106,13 @@ def demo_data():
 if __name__=='__main__':
 
     OPTION = "LOAD"
+    SCHEMA_NAME = "DEMO0427"
     # OPTION = "INIT"
     if OPTION == "INIT":
         test_system = System()
-        test_system.init_database("DEMODATA")
+        test_system.init_database(SCHEMA_NAME)
     else: # load
-        test_system = load_database("DEMODATA")
+        test_system = load_database(SCHEMA_NAME)
         recover(test_system)
     
     test_system.TREE_OPTIMIZER = True
@@ -1191,10 +1174,3 @@ if __name__=='__main__':
                     checkpoint(test_system)
 
     
-    # SELECT Rel1.index, Rel6.index, Rel6.value FROM Rel1 INNER JOIN Rel6 ON Rel1.index = Rel6.index LIMIT 10;
-
-
-
-    # SELECT * FROM Rel5 WHERE index > 99990 OR index = 1 LIMIT 10;
-    # SELECT Rel6.index,Rel6.value,Rel5.index,Rel5.value FROM Rel6 INNER JOIN Rel5 ON Rel6.index = Rel5.index LIMIT 10;
-    # SELECT Rel6.index,Rel6.value,Rel7.index,Rel7.value FROM Rel6 INNER JOIN Rel7 ON Rel6.index = Rel7.index LIMIT 10;

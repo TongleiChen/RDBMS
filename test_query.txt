@@ -6,7 +6,7 @@ CREATE TABLE orders (id INT PRIMARY KEY, price INT, customer_id INT, FOREIGN KEY
 INSERT INTO customer_name (id,customer_name) VALUES (1,'suzy');
 INSERT INTO customer_name (id,customer_name) VALUES (3,'chelsea');
 INSERT INTO customer_name (id,customer_name) VALUES (4,'lesley');
-INSERT INTO customer_name (id,customer_name) VALUES (5,'selina');
+INSERT INTO customer_name (id,customer_name) VALUES (6,'Tina');
 SELECT * FROM customer_name;
 DROP TABLE customer_name;
 DROP TABLE orders;
@@ -42,7 +42,7 @@ INSERT INTO orders (id, customer_id, price) VALUES (700,5, 1500);
 
 
 
-INSERT INTO orders (id, customer_id, price) VALUES (800,5, 2000);
+INSERT INTO orders (id, customer_id, price) VALUES (900,5, 2000);
 
 SELECT COUNT(index) FROM Rel5;
 SELECT COUNT(index) FROM Rel1;

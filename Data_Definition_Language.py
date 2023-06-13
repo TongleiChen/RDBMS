@@ -9,7 +9,6 @@ from AVLTree import avlTree
 import math
 
 
-# YUNI: 一边骂别人不写注释一边自己不写注释的我本人
 
 
 class SystemError(Exception):
@@ -68,11 +67,9 @@ class System:
         else:
             os.mkdir(self.database_name)
             self.tables_filepath = os.path.join(self.database_name,'TABLES.csv')
-            # YUNI: 从来没有这么一天这么爱csv
             with open(self.tables_filepath,'w') as f:
                 f.write('table_name\n')
 
-            # YUNI: 所以说 所有table的columns都放在同一个文件夹对吧！
             self.columns_filepath = os.path.join(self.database_name,'COLUMNS.csv')
 
             with open(self.columns_filepath,'w') as f:
@@ -298,7 +295,7 @@ class System:
         if relation_name in self.foreign_key['foreign_key_0']:
             drop_constraint = self.foreign_key['foreign_key_0'].pop(relation_name)
             # delete from foreign_key_1
-            # 不理解为什么当时我不把他们放一起我是不是有病
+            
 
             table_1_list = drop_constraint['table_1']
             column_0_list = drop_constraint['col_0']
@@ -327,71 +324,11 @@ class System:
         return
 
 
-    def Drop_Table(self,relation_name):
-        # YUNI: 0408 Tested
-        # YUNI: 0414 TODO: NEED TO BE REWRITE
-        if relation_name in self.table_path:
-
-            os.remove(self.table_path[relation_name])
-
-            print(relation_name, "DROPPED SUCCESSFULLY. ")
-            del self.table_path[relation_name]
-            del self.table_attributes[relation_name]
-            write_lines = []
-
-
-            with open(self.columns_filepath,'r') as f:
-                for table_line in f.readlines():
-                    if table_line.split(",")[0] == relation_name:
-                        continue
-                    else:
-                        write_lines.append(table_line)
-            with open(self.columns_filepath,'w') as f:
-                f.write("".join(write_lines))
-
-            write_lines = []
-
-
-            with open(self.tables_filepath,'r') as f:
-                for tables in f.readlines():
-                    if tables[:-1] == relation_name:
-                        continue
-                    else:
-                        write_lines.append(tables)
-            with open(self.tables_filepath,'w') as f:
-                f.write("".join(write_lines))
-
-
-
-            
-
-
-        else:
-            print(relation_name, "DOES NOT EXIST. ")
-        
-
-        return
+    
     
 
 
-    # def insert_data(self,relation_name,data:dict):
-    #     # TODO: 
-    #     # Check duplicates 
-    #     # YUNI: 是在这里check还是在到这里之前check比较好？？
-    #     current_table_path = self.table_path[relation_name]
-    #     attribute_list = self.table_attributes[relation_name]
-    #     data_list = []
-    #     for attri in attribute_list:
-    #         print(attri)
-    #         data_list.append(data[attri[0]])
-
-        
-    #     with open(current_table_path,'r+') as f_t:
-    #         f_t.seek(0,2)
-    #         f_t.write(",".join(map(str, data_list))+"\n")
-
-    #     print("INSERT SUCCESSFULLY. ")
-    #     return
+    
     def insert_data(self,relation_name:str,insert_cols:list,insert_vals:list):
 
 
@@ -436,8 +373,7 @@ class System:
                 self.database_tables[relation_name][column].append(insert_vals[i])
 
 
-        
-        # TODO: NEED TO BE TESTED 0417
+
         if relation_name in self.table_index:
             # add index for the inserted data
             inserted_index_value = len(self.database_tables[relation_name][column])-1
@@ -675,7 +611,6 @@ class System:
         new_data = []
         with open(current_table_path,"r") as f:
             for pos,data_line in enumerate(f.readlines()):
-                # YUNI: 这里data_pos 是不包括标题那一行的第几行
                 if pos == data_pos + 1:
                     continue
                 else:
@@ -993,8 +928,6 @@ class System:
     
     def get_data(self,relation_name):
         # YUNI: 0408 Tested
-        # YUNI: 不知道return 应该是list还是dict还是什么 -0408
-        # YUNI: 看了Suzy的code觉得应该是return一个dict -0411
         # YUNI: 0411 Edited
         current_table_path = self.table_path[relation_name]
         data_in_table = []
@@ -1049,7 +982,7 @@ class System:
 
         return total_number_row
     #####################################################
-    ############    虔诚地给select开辟一块地    ############
+    ############           select            ############
     #####################################################
 
     def check_sort(self,n:int,m:int):
@@ -1370,8 +1303,6 @@ class System:
                 return data_table_output_2
             else: # operation == "OR": condition_1 = True
                  # IN condition_1 = False find condition_2 = True
-                 # 好像要加一个参数要不要输出data_table_output
-                 # 明天再确认一下 现在脑子不太清醒 又感觉好像不用
                 col_1 = condition_1[0]
                 op_1 = condition_1[1]
 
@@ -1648,7 +1579,7 @@ class System:
 
 
             
-        # TODO: using index
+        # using index
             
     def limit(self,data_table:dict,limit_clause:list):
         if len(limit_clause) == 0:
@@ -1701,8 +1632,7 @@ class System:
         return pro_data_table
     
     def group_by(self,data_table:dict,group_columns:list,having_condition:list,table_cols:list,agg_func:list):
-        # 改了十遍！！！！！！！我真的不想再改了！！！！！！
-        # 啊啊啊啊啊啊啊啊
+
 
         # group by only one item
         # having only one condition
@@ -1897,78 +1827,7 @@ class System:
 
 
 
-    #####################################################
-    #################    select 结束    ##################
-    #####################################################
+
 
 
     
-
-
-    
-
-if __name__=='__main__':
-    mySystem=System()
-    # mySystem.Create_Database('CLASS')
-    # # open database
-    # # ATTRIBUTE=namedtuple('attribute',['name','data_type','offset','p_key'])
-    # # A1=ATTRIBUTE(*['animal_name','STR',0,True])
-    # # A2=ATTRIBUTE(*['animal_age','INT',1,False])
-    
-    # mySystem.open_database('CLASS')
-    print(mySystem.open_database('CUSTOMERS'))
-
-    # mySystem.drop_table_dict('orders')
-    # print(mySystem.database_tables)
-    # print(mySystem.foreign_key)
-
-    # mySystem.create_fake_constraint()
-
-    # print(mySystem.foreign_key['foreign_key_1'])
-    # mySystem.save_constraint()
-    # mySystem.load_constraint()
-    # print('==================')
-    # print(mySystem.foreign_key)
-
-    # mySystem.create_fake_index()
-    # mySystem.store_index()
-    # mySystem.read_index()
-    
-
-    # print(mySystem.find_primary_key('name_height'))
-    # mySystem.delete_data('name_age',0)
-    # mySystem.Create_Table('name_age',[['name','String',True],['age','INT',False]])
-    # mySystem.Create_Table('name_height',[['name','String',True],['height','INT',False]])
-    # data = {"name": "suzy","age":13}
-
-    # mySystem.insert_data('name_age',data)
-    # data['age'] = 14
-    # mySystem.update_data('name_age',1,data)
-    # data = {"name": "suzy","height":170}
-    # mySystem.insert_data('name_height',data)
-    # table_name_age = mySystem.get_data('name_age')
-    # print(table_name_age)
-    # table_name_age['name'].append('Lesley')
-    # table_name_age['age'].append(10)
-    # print(table_name_age)
-    # mySystem.overwrite_data("name_age",table_name_age)
-
-    # print(mySystem.get_data('name_height'))
-    # mySystem.Drop_Table('name_age') 
-    # mySystem.Drop_Database()
-    # mySystem.open_databa
-    # print(mySystem.check_duplicates([[1,2,1,4],[2,3,2,5]]))
-    # mySystem.create_index('name_age')
-    # for key, value in mySystem.table_index['name_age'].items():
-    #     print(key,value)
-    # for key, value in mySystem.table_index['name_height'].items():
-    #     print(key,value)
-    
-
-
-
-
-
-
-
-

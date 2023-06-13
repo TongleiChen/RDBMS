@@ -1,5 +1,0 @@
-table_name, attribute_name, data_type, primary_key
-orders,id,INT,True
-orders,customer_id,INT,False
-customer_name,id,INT,True
-customer_name,customer_name,String,False

@@ -28,3 +28,11 @@ INSERT INTO orders (id, customer_id, price) VALUES (700,5, 1500);
 INSERT INTO orders (id, customer_id, price) VALUES (800,5, 2000);
 <CHECKPOINT>
 <CHECKPOINT>
+<CHECKPOINT>
+INSERT INTO orders (id, customer_id, price) VALUES (900,5, 2000);
+INSERT INTO customer_name (id,customer_name) VALUES (6,'tina');
+<CHECKPOINT>
+<CHECKPOINT>
+<CHECKPOINT>
+<CHECKPOINT>
+<CHECKPOINT>
